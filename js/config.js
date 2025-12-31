@@ -87,16 +87,16 @@ const FireworkConfig = {
         relaxed: {
             name: '舒缓模式',
             nameEn: 'Relaxed',
-            interval: 2000,
-            burstCount: 1,
+            interval: 4000,      // 4秒一个，缓慢节奏
+            burstCount: 1,       // 一个接一个
             burstDelay: 0
         },
         intense: {
             name: '激烈模式',
             nameEn: 'Intense',
-            interval: 600,
-            burstCount: 3,
-            burstDelay: 100
+            interval: 800,       // 快速连发
+            burstCount: 3,       // 2-3个同时
+            burstDelay: 150      // 间隔150ms
         }
     },
     
