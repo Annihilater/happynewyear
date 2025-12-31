@@ -25,9 +25,9 @@ src/
 # 方式1: 直接打开
 open index.html
 
-# 方式2: Python服务器（默认端口8021）
-python3 -m http.server 8021
-# 访问 http://localhost:8021
+# 方式2: Python服务器（默认端口5861）
+python3 -m http.server 5861
+# 访问 http://localhost:5861
 
 # 方式3: 使用项目根目录的Makefile
 cd ..

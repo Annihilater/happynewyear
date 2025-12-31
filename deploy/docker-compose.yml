@@ -3,7 +3,7 @@ services:
     image: klause/happynewyear:latest
     container_name: happynewyear-web
     ports:
-    - "${APP_PORT:-8021}:80"
+    - "${APP_PORT:-5861}:80"
     restart: unless-stopped
     environment:
     - TZ=${TZ:-Asia/Shanghai}

@@ -21,7 +21,7 @@ elif [ -f "app.conf" ]; then
 fi
 
 # 设置默认值
-export APP_PORT=${APP_PORT:-8021}
+export APP_PORT=${APP_PORT:-5861}
 
 # 容器状态
 echo -e "${YELLOW}🐳 容器状态:${NC}"

@@ -8,12 +8,11 @@ const DeepAudio = {
     enabled: false,
     volume: 0.3,  // 降低默认音量
     limiter: null,
+    unlocked: false,  // 音频是否已解锁（移动端需要）
     
     init() {
         if (this.ctx) {
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-            }
+            this.resumeContext();
             this.enabled = true;
             return;
         }
@@ -33,17 +32,81 @@ const DeepAudio = {
             
             this.enabled = true;
             
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-            }
+            // 移动端需要先解锁音频上下文
+            this.unlockAudio();
         } catch (e) {
             console.warn('音频初始化失败:', e);
         }
     },
     
+    // 解锁音频上下文（移动端必需）
+    async unlockAudio() {
+        if (!this.ctx || this.unlocked) return;
+        
+        try {
+            // 方法1: 直接 resume
+            if (this.ctx.state === 'suspended') {
+                await this.ctx.resume();
+            }
+            
+            // 方法2: 播放极短静音音频来"解锁"（iOS Safari 需要）
+            if (this.ctx.state === 'suspended') {
+                const buffer = this.ctx.createBuffer(1, 1, 22050);
+                const source = this.ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(this.ctx.destination);
+                source.start(0);
+                source.stop(0);
+                
+                // 再次尝试 resume
+                await this.ctx.resume();
+            }
+            
+            this.unlocked = this.ctx.state === 'running';
+        } catch (e) {
+            console.warn('音频解锁失败:', e);
+        }
+    },
+    
+    // Resume 音频上下文
+    async resumeContext() {
+        if (!this.ctx) return false;
+        
+        try {
+            if (this.ctx.state === 'suspended') {
+                await this.ctx.resume();
+                this.unlocked = this.ctx.state === 'running';
+            }
+            return this.ctx.state === 'running';
+        } catch (e) {
+            console.warn('音频恢复失败:', e);
+            return false;
+        }
+    },
+    
+    // 检查音频是否可用
+    isAudioAvailable() {
+        return this.ctx && this.ctx.state === 'running';
+    },
+    
     // 完全照抄原网站的 playDeepExplosion
-    playDeepExplosion() {
+    async playDeepExplosion() {
         if (!this.enabled || !this.ctx) return;
+        
+        // 确保音频上下文已解锁（移动端）
+        if (!this.unlocked || this.ctx.state === 'suspended') {
+            await this.unlockAudio();
+        }
+        
+        // 如果仍未解锁，尝试 resume
+        if (this.ctx.state === 'suspended') {
+            await this.resumeContext();
+        }
+        
+        // 如果还是 suspended，说明用户未交互，直接返回
+        if (this.ctx.state === 'suspended') {
+            return;
+        }
         
         const e = this.ctx.currentTime;
         

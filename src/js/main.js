@@ -278,15 +278,37 @@ function initApp() {
     // ==================== 音频控制 ====================
     
     const overlay = document.getElementById('audio-overlay');
+    const overlayText = document.getElementById('overlay-text');
     const soundToggle = document.getElementById('sound-toggle');
     let audioInitialized = false;
     
-    function initAudio() {
+    // 检测移动端并更新提示文本
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && overlayText) {
+        overlayText.textContent = '轻触屏幕启用音频并发射烟花';
+    }
+    
+    async function initAudio() {
         if (!audioInitialized && window.DeepAudio) {
             window.DeepAudio.init();
             window.DeepAudio.volume = FireworkConfig.audio.volume;
             window.DeepAudio.enabled = FireworkConfig.audio.soundEnabled;
+            
+            // 移动端：确保音频上下文已解锁
+            await window.DeepAudio.unlockAudio();
+            
             audioInitialized = true;
+            
+            // 检查音频是否真的可用
+            if (!window.DeepAudio.isAudioAvailable()) {
+                console.warn('⚠️ 音频上下文未激活，需要用户交互');
+            }
+        } else if (window.DeepAudio) {
+            // 如果已初始化，确保上下文已恢复
+            const resumed = await window.DeepAudio.resumeContext();
+            if (!resumed && window.DeepAudio.enabled) {
+                console.warn('⚠️ 音频上下文恢复失败，可能需要用户交互');
+            }
         }
     }
     
@@ -306,12 +328,18 @@ function initApp() {
         }
     }
     
-    function toggleSound() {
-        initAudio();
+    async function toggleSound() {
+        await initAudio();
         
         if (window.DeepAudio) {
             const enabled = window.DeepAudio.toggle();
             FireworkConfig.set('audio', 'soundEnabled', enabled);
+            
+            // 如果开启音效，确保音频上下文已解锁
+            if (enabled) {
+                await window.DeepAudio.unlockAudio();
+            }
+            
             updateSoundToggleUI();
             return enabled;
         }
@@ -319,20 +347,40 @@ function initApp() {
     }
     
     // 点击覆盖层启用音频
-    overlay.addEventListener('click', (e) => {
+    overlay.addEventListener('click', async (e) => {
         e.stopPropagation();
         overlay.classList.add('hidden');
         
-        initAudio();
+        await initAudio();
         if (window.DeepAudio) {
             window.DeepAudio.enabled = true;
             FireworkConfig.set('audio', 'soundEnabled', true);
+            // 确保音频上下文已解锁
+            await window.DeepAudio.unlockAudio();
         }
         updateSoundToggleUI();
         
         // 发射烟花
         fireworks.launchMultiple(5);
     });
+    
+    // 触摸事件也触发音频初始化（移动端）
+    overlay.addEventListener('touchstart', async (e) => {
+        e.stopPropagation();
+        overlay.classList.add('hidden');
+        
+        await initAudio();
+        if (window.DeepAudio) {
+            window.DeepAudio.enabled = true;
+            FireworkConfig.set('audio', 'soundEnabled', true);
+            // 确保音频上下文已解锁
+            await window.DeepAudio.unlockAudio();
+        }
+        updateSoundToggleUI();
+        
+        // 发射烟花
+        fireworks.launchMultiple(5);
+    }, { passive: true });
     
     // 音量开关按钮
     soundToggle.addEventListener('click', (e) => {
@@ -354,6 +402,34 @@ function initApp() {
     
     const wishForm = document.getElementById('wish-form');
     const wishInput = document.getElementById('wish-input');
+    const wishSection = document.querySelector('.wish-section');
+    const wishTrigger = document.querySelector('.wish-trigger');
+    
+    // 点击触发图标展开输入框（移动端友好）
+    if (wishTrigger && wishSection) {
+        wishTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            wishSection.classList.add('expanded');
+            // 自动聚焦输入框
+            setTimeout(() => wishInput.focus(), 100);
+        });
+        
+        // 点击外部收起（移动端）
+        document.addEventListener('click', (e) => {
+            if (wishSection.classList.contains('expanded') &&
+                !wishSection.contains(e.target)) {
+                wishSection.classList.remove('expanded');
+            }
+        });
+        
+        // 触摸外部收起
+        document.addEventListener('touchstart', (e) => {
+            if (wishSection.classList.contains('expanded') &&
+                !wishSection.contains(e.target)) {
+                wishSection.classList.remove('expanded');
+            }
+        }, { passive: true });
+    }
     
     wishForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -363,28 +439,66 @@ function initApp() {
             danmaku.addUserWish(wish);
             fireworks.launchMultiple(3);
             wishInput.value = '';
+            // 提交后收起输入框
+            wishSection.classList.remove('expanded');
         }
     });
     
-    // ==================== 鼠标交互 ====================
+    // ==================== 鼠标/触摸交互 ====================
     
+    // 检测是否为触摸设备
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // 判断是否为交互元素（不应触发烟花）
+    function isInteractiveElement(target) {
+        return target.closest('#audio-overlay') || 
+               target.closest('.wish-form') ||
+               target.closest('.wish-section') ||
+               target.closest('.control-buttons') ||
+               target.closest('.adv-settings-panel') ||
+               target.closest('button') ||
+               target.closest('input') ||
+               target.closest('select');
+    }
+    
+    // 鼠标移动 - 粒子跟随
     document.addEventListener('mousemove', (e) => {
         fireworks.updateMouseTrail(e.clientX, e.clientY);
     });
     
+    // 触摸移动 - 粒子跟随
+    document.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            fireworks.updateMouseTrail(touch.clientX, touch.clientY);
+        }
+    }, { passive: true });
+    
+    // 鼠标点击 - 发射烟花
     document.addEventListener('click', (e) => {
-        if (e.target.closest('#audio-overlay') || 
-            e.target.closest('.wish-form') ||
-            e.target.closest('.control-buttons') ||
-            e.target.closest('.adv-settings-panel') ||
-            e.target.closest('button') ||
-            e.target.closest('input') ||
-            e.target.closest('select')) {
+        if (isInteractiveElement(e.target)) {
             return;
         }
-        
         fireworks.explodeAt(e.clientX, e.clientY);
     });
+    
+    // 触摸开始 - 发射烟花（触摸设备）
+    if (isTouchDevice) {
+        document.addEventListener('touchstart', async (e) => {
+            if (isInteractiveElement(e.target)) {
+                return;
+            }
+            
+            // 单指触摸才发射烟花
+            if (e.touches.length === 1) {
+                // 触摸时初始化音频（移动端）
+                await initAudio();
+                
+                const touch = e.touches[0];
+                fireworks.explodeAt(touch.clientX, touch.clientY);
+            }
+        }, { passive: true });
+    }
     
     // ==================== 键盘快捷键 ====================
     

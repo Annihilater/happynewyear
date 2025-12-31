@@ -25,7 +25,7 @@ elif [ -f "app.conf" ]; then
 fi
 
 # 设置默认值
-export APP_PORT=${APP_PORT:-8021}
+export APP_PORT=${APP_PORT:-5861}
 export CONTAINER_PORT=${CONTAINER_PORT:-80}
 export TZ=${TZ:-Asia/Shanghai}
 

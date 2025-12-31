@@ -62,7 +62,7 @@ cd deploy
 ./status.sh     # 查看状态
 ```
 
-访问：**<http://localhost:8021>**
+访问：**<http://localhost:5861>**
 
 **管理命令**：
 
@@ -98,8 +98,8 @@ make help       # 查看所有命令
 ### 方法三：本地服务器
 
 ```bash
-# 使用 Python（默认端口8021）
-cd src && python3 -m http.server 8021
+# 使用 Python（默认端口5861）
+cd src && python3 -m http.server 5861
 
 # 或使用 Makefile（自动读取配置）
 make dev
@@ -108,10 +108,10 @@ make dev
 cd src && npx serve
 
 # 或使用 PHP
-cd src && php -S localhost:8021
+cd src && php -S localhost:5861
 ```
 
-然后访问 `http://localhost:8021`
+然后访问 `http://localhost:5861`
 
 ## 📁 项目结构
 

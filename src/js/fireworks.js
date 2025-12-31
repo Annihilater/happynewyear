@@ -158,10 +158,13 @@ class Firework {
     }
     
     explode() {
-        // 音效
+        // 音效（异步调用，不阻塞）
         const audio = window.FireworkConfig?.audio || {};
         if (audio.soundEnabled && window.DeepAudio && window.DeepAudio.enabled) {
-            window.DeepAudio.playDeepExplosion();
+            window.DeepAudio.playDeepExplosion().catch(err => {
+                // 静默处理音频错误，不影响烟花效果
+                console.debug('音频播放失败:', err);
+            });
         }
         
         this.scene.remove(this.rocketMesh);

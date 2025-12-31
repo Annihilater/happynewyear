@@ -18,8 +18,8 @@
 # 直接用浏览器打开
 open index.html
 
-# 或启动Python服务器（默认端口8021）
-python3 -m http.server 8021
+# 或启动Python服务器（默认端口5861）
+python3 -m http.server 5861
 ```
 
 ### 场景2：Docker本地测试
@@ -122,11 +122,11 @@ cd /opt/happynewyear/deploy
 ```bash
 # 修改端口（推荐方式：修改配置文件）
 vim app.conf
-# 修改 APP_PORT=8021 为你想要的端口
+# 修改 APP_PORT=5861 为你想要的端口
 
 # 或直接修改docker-compose.yml
 vim docker-compose.yml
-# 将 8021:80 改为 80:80（生产环境）
+# 将 5861:80 改为 80:80（生产环境）
 
 # 修改时区
 # environment:
@@ -145,11 +145,11 @@ chmod +x *.sh
 #### 5. 配置防火墙（如需要）
 
 ```bash
-# Ubuntu（默认端口8021）
-sudo ufw allow 8021/tcp
+# Ubuntu（默认端口5861）
+sudo ufw allow 5861/tcp
 
-# CentOS（默认端口8021）
-sudo firewall-cmd --permanent --add-port=8021/tcp
+# CentOS（默认端口5861）
+sudo firewall-cmd --permanent --add-port=5861/tcp
 sudo firewall-cmd --reload
 ```
 
@@ -163,7 +163,7 @@ server {
     server_name your-domain.com;
     
     location / {
-        proxy_pass http://localhost:8021;
+        proxy_pass http://localhost:5861;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
@@ -174,7 +174,7 @@ server {
 
 ```caddy
 your-domain.com {
-    reverse_proxy localhost:8021
+    reverse_proxy localhost:5861
 }
 ```
 
@@ -213,11 +213,11 @@ Actions → Build and Push Docker Image → Run workflow
 
 ```bash
 # 查看端口占用
-lsof -i :8021
+lsof -i :5861
 
 # 修改端口（推荐：修改配置文件）
 vim deploy/app.conf
-# APP_PORT=8021 改为其他端口
+# APP_PORT=5861 改为其他端口
 
 # 或直接修改docker-compose.yml
 vim deploy/docker-compose.yml

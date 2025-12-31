@@ -39,6 +39,12 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    /* 移动端优化 - 防止意外选择和触摸反馈 */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
 }
 
 body {
@@ -295,7 +301,7 @@ body {
         0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* 愿望输入区 - 悬停展开 */
+/* 愿望输入区 - 悬停/点击展开 */
 .wish-section {
     position: relative;
     animation: fadeInUp 1s ease-out 0.4s backwards;
@@ -323,6 +329,15 @@ body {
     box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
 }
 
+/* 触摸设备优化 - 更大的触摸区域 */
+@media (hover: none) and (pointer: coarse) {
+    .wish-trigger {
+        width: 56px;
+        height: 56px;
+        font-size: 28px;
+    }
+}
+
 /* 输入表单 - 默认隐藏 */
 .wish-form {
     position: absolute;
@@ -336,20 +351,52 @@ body {
     pointer-events: none;
 }
 
-/* 悬停时展开 */
+/* 悬停时展开（桌面端）*/
 .wish-section:hover .wish-trigger,
-.wish-section:focus-within .wish-trigger {
+.wish-section:focus-within .wish-trigger,
+.wish-section.expanded .wish-trigger {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
 }
 
 .wish-section:hover .wish-form,
-.wish-section:focus-within .wish-form {
+.wish-section:focus-within .wish-form,
+.wish-section.expanded .wish-form {
     width: min(500px, 90vw);
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+}
+
+/* 触摸设备 - 禁用悬停，仅使用点击展开 */
+@media (hover: none) and (pointer: coarse) {
+    .wish-section:hover .wish-trigger {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+    
+    .wish-section:hover .wish-form {
+        width: 0;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+    
+    /* 点击展开状态（通过JS添加expanded类）*/
+    .wish-section.expanded .wish-trigger {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+    
+    .wish-section.expanded .wish-form {
+        width: min(500px, 90vw);
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
 }
 
 .wish-form:focus-within {
@@ -371,6 +418,12 @@ body {
 
 .wish-input::placeholder {
     color: var(--text-muted);
+}
+
+/* 输入框允许选择文本 */
+.wish-input {
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .wish-input:focus {
