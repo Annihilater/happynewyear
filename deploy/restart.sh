@@ -13,10 +13,15 @@ echo -e "${YELLOW}🔄 重启新年倒计时网站...${NC}"
 cd "$(dirname "$0")"
 
 # 加载配置文件（优先使用.env，否则使用app.conf）
+# 使用 set -a 自动导出所有变量，正确处理包含空格的值
 if [ -f ".env" ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    source .env
+    set +a
 elif [ -f "app.conf" ]; then
-    export $(grep -v '^#' app.conf | xargs)
+    set -a
+    source app.conf
+    set +a
 fi
 
 # 设置默认值
