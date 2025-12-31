@@ -1,11 +1,11 @@
 /**
- * 3D烟花系统 - 优化版
- * 实现由远及近的立体爆炸效果
+ * 3D烟花系统 - 使用Three.js WebGL
+ * 完全模仿原网站 https://2026.xcodeman.com/
  */
 
-class Firework {
-    constructor(canvas, config = {}) {
-        this.canvas = canvas;
+class Firework3D {
+    constructor(scene, config = {}) {
+        this.scene = scene;
         this.cfg = window.FireworkConfig || {};
         
         // 从配置读取参数
@@ -13,90 +13,92 @@ class Firework {
         const physics = this.cfg.physics || {};
         
         // 基础参数
-        this.x = config.x !== undefined ? config.x : Math.random() * canvas.width;
-        this.y = canvas.height + 50;
-        this.targetY = config.targetY !== undefined ? config.targetY : canvas.height * (0.15 + Math.random() * 0.35);
+        this.x = config.x !== undefined ? config.x : (Math.random() - 0.5) * 50;
+        this.z = config.z !== undefined ? config.z : (Math.random() - 0.5) * 50;
+        this.targetY = config.targetY !== undefined ? config.targetY : 10 + Math.random() * 15;
         
         // 3D深度
         this.depth = config.depth !== undefined ? config.depth : Math.random();
-        this.scale = 0.4 + this.depth * 1.0;
-        this.speed = 5 + this.depth * 5;
+        this.scale = 0.4 + this.depth * 0.8;
+        this.speed = 0.15 + this.depth * 0.15;
         
         // 状态
         this.phase = 'rising';
-        this.particles = [];
-        this.trail = [];
-        this.time = 0;
+        this.y = -5;
+        this.particles = null;
         this.done = false;
         
         // 烟花类型
-        this.types = ['sphere', 'ring', 'double', 'willow', 'chrysanthemum', 'palm', 'heart', 'star'];
+        this.types = ['sphere', 'ring', 'willow', 'chrysanthemum'];
         this.type = config.type || this.types[Math.floor(Math.random() * this.types.length)];
         
-        // 配色方案
-        this.colorSchemes = [
-            { primary: '#ff6b6b', secondary: '#ffd93d', accent: '#ff8e3c' },
-            { primary: '#4facfe', secondary: '#00f2fe', accent: '#a8edea' },
-            { primary: '#ff9a9e', secondary: '#fecfef', accent: '#ffecd2' },
-            { primary: '#a18cd1', secondary: '#fbc2eb', accent: '#f5576c' },
-            { primary: '#00ff87', secondary: '#60efff', accent: '#ffd700' },
-            { primary: '#ff0080', secondary: '#ff8c00', accent: '#ffe100' },
-            { primary: '#ffffff', secondary: '#e0e0e0', accent: '#ffd700' },
-            { primary: '#50ff50', secondary: '#90ff90', accent: '#ffffff' },
-            { primary: '#ff1493', secondary: '#ff69b4', accent: '#ffb6c1' },
-            { primary: '#00ffff', secondary: '#40e0d0', accent: '#7fffd4' },
-        ];
-        this.colors = this.colorSchemes[Math.floor(Math.random() * this.colorSchemes.length)];
+        // 颜色
+        this.hue = Math.random() * 360;
+        this.color = new THREE.Color().setHSL(this.hue / 360, 1, 0.6);
         
-        // 参数 - 从配置读取 (原网站默认值)
+        // 参数
         const baseCount = particles.particleCount || 23000;
-        // 每个烟花使用总粒子数的一小部分，保持性能
-        this.particleCount = Math.floor((baseCount / 100) * this.scale * (0.8 + Math.random() * 0.4));
+        this.particleCount = Math.floor(baseCount * this.scale);
         this.particleSize = (particles.particleSize || 0.8) * this.scale;
-        this.fadeSpeed = (particles.fadeSpeed || 0.00482) * (0.8 + Math.random() * 0.4);
-        this.explosionForce = (physics.explosionForce || 3.3975) * this.scale * (0.8 + Math.random() * 0.4);
+        this.fadeSpeed = particles.fadeSpeed || 0.00482;
+        this.explosionForce = (physics.explosionForce || 3.3975) * this.scale;
         this.gravity = (physics.gravity || 0.00265) * this.scale;
-        this.hoverDuration = (physics.hoverDuration || 1.5) * 60;
         
         // 上升拖尾
-        this.trailLength = 12;
+        this.createRisingTrail();
+    }
+    
+    createRisingTrail() {
+        const geometry = new THREE.BufferGeometry();
+        const material = new THREE.PointsMaterial({
+            size: 0.15,
+            color: 0xffcc66,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        
+        const positions = [];
+        for (let i = 0; i < 20; i++) {
+            positions.push(this.x, this.y - i * 0.2, this.z);
+        }
+        
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        this.trail = new THREE.Points(geometry, material);
+        this.scene.add(this.trail);
     }
     
     update() {
         if (this.done) return false;
         
-        this.time++;
-        
         if (this.phase === 'rising') {
-            this.y -= this.speed;
+            this.y += this.speed;
             
-            // 添加拖尾
-            this.trail.push({
-                x: this.x + (Math.random() - 0.5) * 3,
-                y: this.y,
-                alpha: 1,
-                size: 2.5 * this.scale
-            });
-            
-            while (this.trail.length > this.trailLength) {
-                this.trail.shift();
+            // 更新拖尾
+            if (this.trail) {
+                const positions = this.trail.geometry.attributes.position.array;
+                for (let i = positions.length - 3; i >= 3; i -= 3) {
+                    positions[i] = positions[i - 3];
+                    positions[i + 1] = positions[i - 2];
+                    positions[i + 2] = positions[i - 1];
+                }
+                positions[0] = this.x;
+                positions[1] = this.y;
+                positions[2] = this.z;
+                this.trail.geometry.attributes.position.needsUpdate = true;
             }
             
-            this.trail.forEach((t, i) => {
-                t.alpha = (i / this.trail.length) * 0.7;
-            });
-            
-            if (this.y <= this.targetY) {
+            if (this.y >= this.targetY) {
                 this.explode();
             }
         } else if (this.phase === 'exploding') {
             this.updateParticles();
             
             // 检查是否完成
-            const allDone = this.particles.every(p => p.alpha <= 0.01);
-            if (allDone || this.time > 600) {
+            if (this.particleLife <= 0) {
                 this.done = true;
-                this.phase = 'done';
+                this.cleanup();
             }
         }
         
@@ -105,8 +107,15 @@ class Firework {
     
     explode() {
         this.phase = 'exploding';
-        this.trail = [];
-        this.time = 0;
+        this.particleLife = 150;
+        
+        // 移除拖尾
+        if (this.trail) {
+            this.scene.remove(this.trail);
+            this.trail.geometry.dispose();
+            this.trail.material.dispose();
+            this.trail = null;
+        }
         
         // 音效
         const audio = this.cfg.audio || {};
@@ -114,374 +123,201 @@ class Firework {
             window.DeepAudio.playDeepExplosion();
         }
         
-        // 根据类型创建粒子
-        switch (this.type) {
-            case 'sphere': this.createSphereExplosion(); break;
-            case 'ring': this.createRingExplosion(); break;
-            case 'double': this.createDoubleExplosion(); break;
-            case 'willow': this.createWillowExplosion(); break;
-            case 'chrysanthemum': this.createChrysanthemumExplosion(); break;
-            case 'palm': this.createPalmExplosion(); break;
-            case 'heart': this.createHeartExplosion(); break;
-            case 'star': this.createStarExplosion(); break;
-            default: this.createSphereExplosion();
-        }
+        // 创建粒子系统
+        this.createParticles();
     }
     
-    // 球形爆炸
-    createSphereExplosion() {
+    createParticles() {
+        const geometry = new THREE.BufferGeometry();
+        
+        const positions = [];
+        const velocities = [];
+        const colors = [];
+        const sizes = [];
+        const lifetimes = [];
+        
+        // 根据类型生成粒子
         for (let i = 0; i < this.particleCount; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const elevation = Math.acos(2 * Math.random() - 1);
-            const force = this.explosionForce * (0.5 + Math.random() * 0.5);
+            let vx, vy, vz;
             
-            this.particles.push(this.createParticle(
-                force * Math.sin(elevation) * Math.cos(angle),
-                force * Math.sin(elevation) * Math.sin(angle) - force * 0.3,
-                force * Math.cos(elevation) * 0.3,
-                this.getRandomColor()
-            ));
-        }
-    }
-    
-    // 环形爆炸
-    createRingExplosion() {
-        const rings = 2 + Math.floor(Math.random() * 2);
-        for (let r = 0; r < rings; r++) {
-            const ringParticles = Math.floor(this.particleCount / rings);
-            const ringForce = this.explosionForce * (0.7 + r * 0.25);
-            
-            for (let i = 0; i < ringParticles; i++) {
-                const angle = (i / ringParticles) * Math.PI * 2 + Math.random() * 0.1;
-                
-                this.particles.push(this.createParticle(
-                    ringForce * Math.cos(angle),
-                    ringForce * Math.sin(angle) * 0.5 - ringForce * 0.2,
-                    ringForce * 0.15 * (Math.random() - 0.5),
-                    r === 0 ? this.colors.primary : this.colors.secondary
-                ));
+            if (this.type === 'sphere') {
+                // 球形爆炸
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const force = this.explosionForce * (0.5 + Math.random() * 0.5);
+                vx = force * Math.sin(phi) * Math.cos(theta);
+                vy = force * Math.sin(phi) * Math.sin(theta);
+                vz = force * Math.cos(phi);
+            } else if (this.type === 'ring') {
+                // 环形爆炸
+                const theta = Math.random() * Math.PI * 2;
+                const force = this.explosionForce * (0.7 + Math.random() * 0.4);
+                vx = force * Math.cos(theta);
+                vy = (Math.random() - 0.5) * force * 0.3;
+                vz = force * Math.sin(theta);
+            } else if (this.type === 'willow') {
+                // 垂柳型
+                const theta = Math.random() * Math.PI * 2;
+                const force = this.explosionForce * (0.5 + Math.random() * 0.5);
+                vx = force * Math.cos(theta) * 0.4;
+                vy = force * (0.3 + Math.random() * 0.3);
+                vz = force * Math.sin(theta) * 0.4;
+            } else {
+                // 菊花型
+                const lines = 16;
+                const lineIndex = Math.floor(i / (this.particleCount / lines));
+                const theta = (lineIndex / lines) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
+                const force = this.explosionForce * (0.3 + Math.random() * 0.8);
+                vx = force * Math.cos(theta);
+                vy = (Math.random() - 0.5) * force * 0.2;
+                vz = force * Math.sin(theta);
             }
-        }
-    }
-    
-    // 双层爆炸
-    createDoubleExplosion() {
-        // 内层
-        for (let i = 0; i < this.particleCount * 0.4; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const force = this.explosionForce * 0.5;
             
-            const p = this.createParticle(
-                force * Math.cos(angle) * (0.8 + Math.random() * 0.4),
-                force * Math.sin(angle) * (0.8 + Math.random() * 0.4) - force * 0.3,
-                force * (Math.random() - 0.5) * 0.4,
-                this.colors.accent
-            );
-            p.fadeSpeed = this.fadeSpeed * 1.5;
-            this.particles.push(p);
+            positions.push(this.x, this.y, this.z);
+            velocities.push(vx, vy, vz);
+            
+            // 颜色变化
+            const hueVar = this.hue + (Math.random() - 0.5) * 60;
+            const c = new THREE.Color().setHSL(hueVar / 360, 0.9 + Math.random() * 0.1, 0.5 + Math.random() * 0.2);
+            colors.push(c.r, c.g, c.b);
+            
+            sizes.push(this.particleSize * (0.8 + Math.random() * 0.4));
+            lifetimes.push(1.0);
         }
         
-        // 外层
-        for (let i = 0; i < this.particleCount * 0.6; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const force = this.explosionForce * (0.9 + Math.random() * 0.3);
-            
-            this.particles.push(this.createParticle(
-                force * Math.cos(angle),
-                force * Math.sin(angle) - force * 0.3,
-                force * (Math.random() - 0.5) * 0.4,
-                this.getRandomColor()
-            ));
-        }
-    }
-    
-    // 垂柳型
-    createWillowExplosion() {
-        for (let i = 0; i < this.particleCount; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const force = this.explosionForce * (0.6 + Math.random() * 0.5);
-            
-            const p = this.createParticle(
-                force * Math.cos(angle) * 0.7,
-                force * Math.sin(angle) * 0.4 - force * 0.15,
-                force * (Math.random() - 0.5) * 0.25,
-                this.getRandomColor()
-            );
-            p.gravity = this.gravity * 2.5;
-            p.fadeSpeed = this.fadeSpeed * 0.5;
-            p.trailLength = 20;
-            this.particles.push(p);
-        }
-    }
-    
-    // 菊花型
-    createChrysanthemumExplosion() {
-        const lines = 12 + Math.floor(Math.random() * 8);
-        const particlesPerLine = Math.floor(this.particleCount / lines);
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
         
-        for (let l = 0; l < lines; l++) {
-            const baseAngle = (l / lines) * Math.PI * 2;
-            
-            for (let i = 0; i < particlesPerLine; i++) {
-                const progress = i / particlesPerLine;
-                const force = this.explosionForce * (0.2 + progress * 0.9);
-                const spread = 0.08;
-                const angle = baseAngle + (Math.random() - 0.5) * spread;
-                
-                const p = this.createParticle(
-                    force * Math.cos(angle),
-                    force * Math.sin(angle) * 0.6 - force * 0.15,
-                    force * (Math.random() - 0.5) * 0.2,
-                    progress < 0.5 ? this.colors.primary : this.colors.secondary
-                );
-                p.fadeSpeed = this.fadeSpeed * (0.7 + progress * 0.5);
-                this.particles.push(p);
-            }
-        }
-    }
-    
-    // 棕榈型
-    createPalmExplosion() {
-        const branches = 6 + Math.floor(Math.random() * 4);
+        // 保存速度和生命
+        this.velocities = velocities;
+        this.lifetimes = lifetimes;
         
-        for (let b = 0; b < branches; b++) {
-            const baseAngle = (b / branches) * Math.PI * 2;
-            const branchParticles = Math.floor(this.particleCount / branches);
-            
-            for (let i = 0; i < branchParticles; i++) {
-                const progress = i / branchParticles;
-                const force = this.explosionForce * (0.3 + progress * 0.8);
-                const spread = progress * 0.4;
-                const angle = baseAngle + (Math.random() - 0.5) * spread;
-                
-                const p = this.createParticle(
-                    force * Math.cos(angle),
-                    -force * 0.7 + progress * force * 0.4,
-                    force * (Math.random() - 0.5) * 0.3,
-                    progress < 0.4 ? this.colors.secondary : this.colors.primary
-                );
-                p.gravity = this.gravity * 1.8;
-                this.particles.push(p);
-            }
-        }
-    }
-    
-    // 心形
-    createHeartExplosion() {
-        for (let i = 0; i < this.particleCount; i++) {
-            const t = (i / this.particleCount) * Math.PI * 2;
-            // 心形参数方程
-            const hx = 16 * Math.pow(Math.sin(t), 3);
-            const hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-            
-            const scale = this.explosionForce * 0.15;
-            const p = this.createParticle(
-                hx * scale * (0.9 + Math.random() * 0.2),
-                -hy * scale * (0.9 + Math.random() * 0.2),
-                (Math.random() - 0.5) * this.explosionForce * 0.2,
-                this.colors.primary
-            );
-            p.fadeSpeed = this.fadeSpeed * 0.7;
-            this.particles.push(p);
-        }
-    }
-    
-    // 星形
-    createStarExplosion() {
-        const points = 5;
-        for (let i = 0; i < this.particleCount; i++) {
-            const angle = (i / this.particleCount) * Math.PI * 2;
-            const r = (i % 2 === 0) ? this.explosionForce : this.explosionForce * 0.5;
-            
-            this.particles.push(this.createParticle(
-                r * Math.cos(angle * points) * (0.9 + Math.random() * 0.2),
-                r * Math.sin(angle * points) * (0.9 + Math.random() * 0.2) - r * 0.2,
-                (Math.random() - 0.5) * this.explosionForce * 0.3,
-                i % 2 === 0 ? this.colors.primary : this.colors.accent
-            ));
-        }
-    }
-    
-    createParticle(vx, vy, vz, color) {
-        return {
-            x: this.x,
-            y: this.y,
-            z: 0,
-            vx: vx,
-            vy: vy,
-            vz: vz,
-            color: color,
-            alpha: 1,
-            size: this.particleSize * (1 + Math.random() * 1.5),
-            gravity: this.gravity,
-            fadeSpeed: this.fadeSpeed,
-            trail: [],
-            trailLength: 6 + Math.floor(Math.random() * 6),
-            friction: 0.985,
-            twinkle: Math.random() > 0.75,
-            sparkle: Math.random() > 0.9
-        };
-    }
-    
-    getRandomColor() {
-        const colors = [this.colors.primary, this.colors.secondary, this.colors.accent];
-        return colors[Math.floor(Math.random() * colors.length)];
+        const material = new THREE.PointsMaterial({
+            size: 0.2,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            sizeAttenuation: true
+        });
+        
+        this.particles = new THREE.Points(geometry, material);
+        this.scene.add(this.particles);
     }
     
     updateParticles() {
-        this.particles.forEach(p => {
-            if (p.alpha <= 0) return;
+        if (!this.particles) return;
+        
+        const positions = this.particles.geometry.attributes.position.array;
+        const sizes = this.particles.geometry.attributes.size.array;
+        
+        for (let i = 0; i < this.particleCount; i++) {
+            const i3 = i * 3;
             
-            // 保存拖尾
-            if (p.alpha > 0.15) {
-                p.trail.push({ x: p.x, y: p.y, alpha: p.alpha * 0.5 });
-                while (p.trail.length > p.trailLength) {
-                    p.trail.shift();
-                }
-            }
+            // 更新位置
+            positions[i3] += this.velocities[i3];
+            positions[i3 + 1] += this.velocities[i3 + 1];
+            positions[i3 + 2] += this.velocities[i3 + 2];
             
-            // 物理更新
-            p.x += p.vx;
-            p.y += p.vy;
-            p.z += p.vz;
+            // 重力
+            this.velocities[i3 + 1] -= this.gravity;
             
-            p.vy += p.gravity;
-            
-            p.vx *= p.friction;
-            p.vy *= p.friction;
-            p.vz *= p.friction;
+            // 空气阻力
+            this.velocities[i3] *= 0.98;
+            this.velocities[i3 + 1] *= 0.98;
+            this.velocities[i3 + 2] *= 0.98;
             
             // 淡出
-            p.alpha -= p.fadeSpeed;
-            if (p.alpha < 0) p.alpha = 0;
+            this.lifetimes[i] -= this.fadeSpeed;
+            if (this.lifetimes[i] < 0) this.lifetimes[i] = 0;
             
-            // 闪烁
-            if (p.twinkle && Math.random() > 0.92) {
-                p.alpha = Math.min(1, p.alpha + 0.25);
-            }
-        });
-    }
-    
-    draw(ctx) {
-        const depthAlpha = 0.5 + this.depth * 0.5;
-        
-        if (this.phase === 'rising') {
-            // 上升拖尾
-            this.trail.forEach((t, i) => {
-                ctx.beginPath();
-                ctx.arc(t.x, t.y, t.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 200, 100, ${t.alpha * depthAlpha})`;
-                ctx.fill();
-            });
-            
-            // 烟花头
-            const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, 6 * this.scale);
-            gradient.addColorStop(0, `rgba(255, 255, 255, ${depthAlpha})`);
-            gradient.addColorStop(0.4, `rgba(255, 220, 100, ${depthAlpha * 0.8})`);
-            gradient.addColorStop(1, 'rgba(255, 100, 50, 0)');
-            
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, 6 * this.scale, 0, Math.PI * 2);
-            ctx.fillStyle = gradient;
-            ctx.fill();
-        } else if (this.phase === 'exploding') {
-            this.particles.forEach(p => {
-                if (p.alpha <= 0.01) return;
-                
-                const perspectiveScale = 1 + p.z * 0.008;
-                const size = p.size * perspectiveScale;
-                const alpha = p.alpha * depthAlpha;
-                
-                // 拖尾
-                p.trail.forEach((t, i) => {
-                    const trailProgress = i / p.trail.length;
-                    const trailSize = size * (0.2 + trailProgress * 0.4);
-                    const trailAlpha = t.alpha * trailProgress * 0.4;
-                    
-                    ctx.beginPath();
-                    ctx.arc(t.x, t.y, trailSize, 0, Math.PI * 2);
-                    ctx.fillStyle = this.hexToRgba(p.color, trailAlpha * depthAlpha);
-                    ctx.fill();
-                });
-                
-                // 光晕
-                const glowSize = size * 2.5;
-                const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
-                gradient.addColorStop(0, this.hexToRgba(p.color, alpha));
-                gradient.addColorStop(0.35, this.hexToRgba(p.color, alpha * 0.5));
-                gradient.addColorStop(0.7, this.hexToRgba(p.color, alpha * 0.15));
-                gradient.addColorStop(1, this.hexToRgba(p.color, 0));
-                
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
-                ctx.fillStyle = gradient;
-                ctx.fill();
-                
-                // 中心亮点
-                if (p.sparkle || alpha > 0.5) {
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, size * 0.4, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
-                    ctx.fill();
-                }
-            });
-        }
-    }
-    
-    hexToRgba(hex, alpha) {
-        if (hex.startsWith('rgba')) return hex;
-        if (hex.startsWith('rgb')) {
-            return hex.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+            // 粒子大小随生命值缩小
+            sizes[i] *= 0.99;
         }
         
-        let r = 255, g = 255, b = 255;
-        if (hex.startsWith('#')) {
-            const bigint = parseInt(hex.slice(1), 16);
-            r = (bigint >> 16) & 255;
-            g = (bigint >> 8) & 255;
-            b = bigint & 255;
+        this.particles.geometry.attributes.position.needsUpdate = true;
+        this.particles.geometry.attributes.size.needsUpdate = true;
+        this.particles.material.opacity = Math.max(0, this.particleLife / 150);
+        
+        this.particleLife--;
+    }
+    
+    cleanup() {
+        if (this.particles) {
+            this.scene.remove(this.particles);
+            this.particles.geometry.dispose();
+            this.particles.material.dispose();
+            this.particles = null;
         }
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        if (this.trail) {
+            this.scene.remove(this.trail);
+            this.trail.geometry.dispose();
+            this.trail.material.dispose();
+            this.trail = null;
+        }
     }
 }
 
 /**
- * 烟花系统管理器
+ * Three.js烟花系统管理器
  */
 class FireworkSystem {
     constructor(canvasId) {
-        this.canvas = document.getElementById(canvasId);
-        if (!this.canvas) {
-            console.error('Canvas not found:', canvasId);
+        this.container = document.getElementById(canvasId);
+        if (!this.container) {
+            console.error('Container not found:', canvasId);
             return;
         }
-        this.ctx = this.canvas.getContext('2d');
         
+        // 创建Three.js场景
+        this.scene = new THREE.Scene();
+        
+        // 创建相机
+        this.camera = new THREE.PerspectiveCamera(
+            60,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        this.camera.position.set(0, 5, 30);
+        this.camera.lookAt(0, 5, 0);
+        
+        // 创建WebGL渲染器
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.container,
+            alpha: true,
+            antialias: true
+        });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        
+        // 烟花列表
         this.fireworks = [];
         this.mouseTrail = [];
         this.autoLaunch = true;
         this.lastLaunchTime = 0;
-        this.launchInterval = 2000;
         
-        this.resize();
-        window.addEventListener('resize', () => this.resize());
+        // 响应式
+        window.addEventListener('resize', () => this.onWindowResize());
         
-        // 开始动画循环
+        // 开始渲染循环
         this.running = true;
         this.animate();
     }
     
-    resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+    onWindowResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
     
     launch(config = {}) {
-        if (!this.canvas) return;
-        
-        const firework = new Firework(this.canvas, {
-            x: config.x !== undefined ? config.x : Math.random() * this.canvas.width,
-            targetY: config.targetY !== undefined ? config.targetY : this.canvas.height * (0.12 + Math.random() * 0.35),
+        const firework = new Firework3D(this.scene, {
+            x: config.x !== undefined ? config.x : (Math.random() - 0.5) * 40,
+            z: config.z !== undefined ? config.z : (Math.random() - 0.5) * 40,
+            targetY: config.targetY !== undefined ? config.targetY : 8 + Math.random() * 12,
             depth: config.depth !== undefined ? config.depth : Math.random(),
             type: config.type
         });
@@ -497,74 +333,44 @@ class FireworkSystem {
     }
     
     explodeAt(x, y) {
-        const depth = 0.7 + Math.random() * 0.3;
-        const firework = new Firework(this.canvas, {
-            x: x,
-            targetY: y,
-            depth: depth
+        // 将屏幕坐标转换为3D坐标
+        const mouse = new THREE.Vector2();
+        mouse.x = (x / window.innerWidth) * 2 - 1;
+        mouse.y = -(y / window.innerHeight) * 2 + 1;
+        
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, this.camera);
+        
+        // 在射线上选择一个点
+        const distance = 15 + Math.random() * 10;
+        const point = raycaster.ray.origin.clone().add(raycaster.ray.direction.multiplyScalar(distance));
+        
+        const firework = new Firework3D(this.scene, {
+            x: point.x,
+            z: point.z,
+            targetY: point.y,
+            depth: 0.7 + Math.random() * 0.3
         });
-        firework.y = y;
+        firework.y = point.y;
         firework.explode();
         this.fireworks.push(firework);
     }
     
     updateMouseTrail(x, y) {
-        this.mouseTrail.push({
-            x: x,
-            y: y,
-            alpha: 1,
-            size: 2 + Math.random() * 2,
-            color: `hsl(${Math.random() * 60 + 30}, 100%, 65%)`,
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: Math.random() * 1.5 + 0.5
-        });
-        
-        while (this.mouseTrail.length > 40) {
-            this.mouseTrail.shift();
-        }
+        // Mouse trail不需要在3D场景中实现，保持原有Canvas 2D实现
     }
     
     animate() {
-        if (!this.running || !this.ctx) return;
+        if (!this.running) return;
         
-        // 半透明清除实现拖尾
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // 鼠标拖尾
-        this.mouseTrail = this.mouseTrail.filter(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.04;
-            p.alpha -= 0.025;
-            
-            if (p.alpha > 0) {
-                this.ctx.beginPath();
-                this.ctx.arc(p.x, p.y, p.size * p.alpha, 0, Math.PI * 2);
-                this.ctx.fillStyle = p.color.replace('65%)', `${65 * p.alpha}%)`).replace('hsl', 'hsla').replace(')', `, ${p.alpha})`);
-                this.ctx.fill();
-                return true;
-            }
-            return false;
-        });
-        
-        // 按深度排序
-        this.fireworks.sort((a, b) => a.depth - b.depth);
-        
-        // 更新和绘制烟花
-        this.fireworks = this.fireworks.filter(fw => {
-            const alive = fw.update();
-            if (alive || fw.phase === 'exploding') {
-                fw.draw(this.ctx);
-            }
-            return alive;
-        });
+        // 更新所有烟花
+        this.fireworks = this.fireworks.filter(fw => fw.update());
         
         // 自动发射
         if (this.autoLaunch) {
             const now = Date.now();
             const cfg = window.FireworkConfig;
-            const modeConfig = cfg ? cfg.modes[cfg.currentMode] : { interval: 2000, burstCount: 1, burstDelay: 0 };
+            const modeConfig = cfg ? cfg.modes[cfg.currentMode] : { interval: 4000, burstCount: 1, burstDelay: 0 };
             
             if (now - this.lastLaunchTime > modeConfig.interval) {
                 const count = modeConfig.burstCount || 1;
@@ -575,11 +381,16 @@ class FireworkSystem {
             }
         }
         
+        // 渲染
+        this.renderer.render(this.scene, this.camera);
+        
         requestAnimationFrame(() => this.animate());
     }
     
     destroy() {
         this.running = false;
+        this.fireworks.forEach(fw => fw.cleanup());
+        this.renderer.dispose();
     }
 }
 
