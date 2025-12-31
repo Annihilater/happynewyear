@@ -28,9 +28,8 @@ class Firework3D {
         this.particles = null;
         this.done = false;
         
-        // 烟花类型
-        this.types = ['sphere', 'ring', 'willow', 'chrysanthemum'];
-        this.type = config.type || this.types[Math.floor(Math.random() * this.types.length)];
+        // 烟花类型 - 全部使用球形以保持完整效果
+        this.type = config.type || 'sphere';
         
         // 颜色
         this.hue = Math.random() * 360;
@@ -136,42 +135,22 @@ class Firework3D {
         const sizes = [];
         const lifetimes = [];
         
-        // 根据类型生成粒子
+        // 完美球形爆炸 - 使用Fibonacci球面分布算法确保均匀
+        const goldenRatio = (1 + Math.sqrt(5)) / 2;
+        const angleIncrement = Math.PI * 2 * goldenRatio;
+        
         for (let i = 0; i < this.particleCount; i++) {
-            let vx, vy, vz;
+            // Fibonacci 球面分布 + 随机扰动
+            const t = i / this.particleCount;
+            const phi = Math.acos(1 - 2 * t) + (Math.random() - 0.5) * 0.2;
+            const theta = angleIncrement * i + (Math.random() - 0.5) * 0.3;
             
-            if (this.type === 'sphere') {
-                // 球形爆炸
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-                const force = this.explosionForce * (0.5 + Math.random() * 0.5);
-                vx = force * Math.sin(phi) * Math.cos(theta);
-                vy = force * Math.sin(phi) * Math.sin(theta);
-                vz = force * Math.cos(phi);
-            } else if (this.type === 'ring') {
-                // 环形爆炸
-                const theta = Math.random() * Math.PI * 2;
-                const force = this.explosionForce * (0.7 + Math.random() * 0.4);
-                vx = force * Math.cos(theta);
-                vy = (Math.random() - 0.5) * force * 0.3;
-                vz = force * Math.sin(theta);
-            } else if (this.type === 'willow') {
-                // 垂柳型
-                const theta = Math.random() * Math.PI * 2;
-                const force = this.explosionForce * (0.5 + Math.random() * 0.5);
-                vx = force * Math.cos(theta) * 0.4;
-                vy = force * (0.3 + Math.random() * 0.3);
-                vz = force * Math.sin(theta) * 0.4;
-            } else {
-                // 菊花型
-                const lines = 16;
-                const lineIndex = Math.floor(i / (this.particleCount / lines));
-                const theta = (lineIndex / lines) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
-                const force = this.explosionForce * (0.3 + Math.random() * 0.8);
-                vx = force * Math.cos(theta);
-                vy = (Math.random() - 0.5) * force * 0.2;
-                vz = force * Math.sin(theta);
-            }
+            // 随机力度，产生多层效果
+            const force = this.explosionForce * (0.4 + Math.random() * 0.7);
+            
+            const vx = force * Math.sin(phi) * Math.cos(theta);
+            const vy = force * Math.sin(phi) * Math.sin(theta);
+            const vz = force * Math.cos(phi);
             
             positions.push(this.x, this.y, this.z);
             velocities.push(vx, vy, vz);
