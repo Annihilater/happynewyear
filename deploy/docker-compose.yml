@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
     environment:
     - TZ=${TZ:-Asia/Shanghai}
-    - SITE_SUBTITLE=${SITE_SUBTITLE_XLIGHT:-XLIGHT 前路有光}
+    - SITE_SUBTITLE=${SITE_SUBTITLE_XLIGHT:-倒计时网站}
     - SITE_TAGLINE=${SITE_TAGLINE_XLIGHT:-点亮希望，照亮未来}
     - SITE_YEAR=${SITE_YEAR_XLIGHT:-2026}
     labels:

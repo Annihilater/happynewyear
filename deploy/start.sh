@@ -40,12 +40,13 @@ export TZ=${TZ:-Asia/Shanghai}
 
 # 检查是否已经在运行
 if docker-compose ps | grep -q "Up"; then
-    echo -e "${YELLOW}⚠️  容器已在运行，将重启...${NC}"
-    docker-compose restart
-else
-    # 启动服务
-    docker-compose up -d
+    echo -e "${YELLOW}⚠️  容器已在运行，将停止并重新启动以应用新配置...${NC}"
+    docker-compose down
 fi
+
+# 启动服务（使用环境变量）
+echo -e "${YELLOW}🚀 启动服务...${NC}"
+docker-compose up -d
 
 # 等待服务启动
 echo -e "${YELLOW}⏳ 等待服务启动...${NC}"

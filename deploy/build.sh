@@ -10,7 +10,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 IMAGE_NAME="klause/happynewyear"
-IMAGE_TAG="20251231"
+IMAGE_TAG="latest"
 FULL_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
 
 echo -e "${CYAN}"
