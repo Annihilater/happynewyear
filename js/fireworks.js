@@ -180,17 +180,63 @@ class Firework3D {
         this.lifetimes = lifetimes;
         
         const material = new THREE.PointsMaterial({
-            size: 0.15, // 稍微调小基础大小
+            size: 0.15,
             vertexColors: true,
             transparent: true,
             opacity: 0.95,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
-            sizeAttenuation: true // 启用透视缩放
+            sizeAttenuation: true
         });
         
         this.particles = new THREE.Points(geometry, material);
         this.scene.add(this.particles);
+        
+        // 创建拖尾效果（水滴形状）
+        this.createTrails();
+    }
+    
+    createTrails() {
+        // 为每个粒子创建拖尾线段
+        const trailGeometry = new THREE.BufferGeometry();
+        const trailPositions = [];
+        const trailColors = [];
+        
+        // 每个粒子有一个拖尾（起点到终点）
+        for (let i = 0; i < this.particleCount; i++) {
+            // 拖尾起点（当前位置）
+            trailPositions.push(this.x, this.y, this.z);
+            // 拖尾终点（稍后会更新）
+            trailPositions.push(this.x, this.y, this.z);
+            
+            // 颜色（从粒子复制）
+            const color = this.particles.geometry.attributes.color.array;
+            const i3 = i * 3;
+            trailColors.push(color[i3], color[i3 + 1], color[i3 + 2]);
+            trailColors.push(color[i3], color[i3 + 1], color[i3 + 2]);
+        }
+        
+        trailGeometry.setAttribute('position', new THREE.Float32BufferAttribute(trailPositions, 3));
+        trailGeometry.setAttribute('color', new THREE.Float32BufferAttribute(trailColors, 3));
+        
+        const trailMaterial = new THREE.LineBasicMaterial({
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending,
+            linewidth: 2 // 注意：WebGL不支持，但保留
+        });
+        
+        this.trails = new THREE.LineSegments(trailGeometry, trailMaterial);
+        this.scene.add(this.trails);
+        
+        // 存储历史位置用于拖尾
+        this.particleHistory = [];
+        for (let i = 0; i < this.particleCount; i++) {
+            this.particleHistory.push([
+                { x: this.x, y: this.y, z: this.z }
+            ]);
+        }
     }
     
     updateParticles() {
@@ -199,6 +245,9 @@ class Firework3D {
         this.time++;
         const positions = this.particles.geometry.attributes.position.array;
         const sizes = this.particles.geometry.attributes.size.array;
+        
+        // 拖尾位置数组
+        const trailPositions = this.trails ? this.trails.geometry.attributes.position.array : null;
         
         // 分阶段物理：
         // 0-80帧：快速爆炸扩散（高阻力）
@@ -209,6 +258,19 @@ class Firework3D {
         
         for (let i = 0; i < this.particleCount; i++) {
             const i3 = i * 3;
+            
+            // 保存当前位置到历史（用于拖尾）
+            if (this.particleHistory && this.particleHistory[i]) {
+                this.particleHistory[i].push({
+                    x: positions[i3],
+                    y: positions[i3 + 1],
+                    z: positions[i3 + 2]
+                });
+                // 只保留最近8个位置
+                if (this.particleHistory[i].length > 8) {
+                    this.particleHistory[i].shift();
+                }
+            }
             
             // 更新位置
             positions[i3] += this.velocities[i3];
@@ -222,6 +284,23 @@ class Firework3D {
             this.velocities[i3] *= friction;
             this.velocities[i3 + 1] *= friction;
             this.velocities[i3 + 2] *= friction;
+            
+            // 更新拖尾（水滴效果）
+            if (trailPositions && this.particleHistory[i] && this.particleHistory[i].length > 0) {
+                const i6 = i * 6; // 每个粒子2个点（起点和终点）
+                const history = this.particleHistory[i];
+                const tailPos = history[0]; // 最早的位置作为拖尾
+                
+                // 拖尾起点（尾部）
+                trailPositions[i6] = tailPos.x;
+                trailPositions[i6 + 1] = tailPos.y;
+                trailPositions[i6 + 2] = tailPos.z;
+                
+                // 拖尾终点（当前位置）
+                trailPositions[i6 + 3] = positions[i3];
+                trailPositions[i6 + 4] = positions[i3 + 1];
+                trailPositions[i6 + 5] = positions[i3 + 2];
+            }
             
             // 淡出：前300帧保持，300-400帧淡出
             if (this.time > 300) {
@@ -240,6 +319,14 @@ class Firework3D {
         this.particles.geometry.attributes.position.needsUpdate = true;
         this.particles.geometry.attributes.size.needsUpdate = true;
         
+        // 更新拖尾
+        if (this.trails) {
+            this.trails.geometry.attributes.position.needsUpdate = true;
+            // 拖尾透明度随整体透明度变化
+            const opacityProgress = Math.min(1, this.particleLife / 400);
+            this.trails.material.opacity = opacityProgress > 0.25 ? 0.5 : opacityProgress * 2;
+        }
+        
         // 整体透明度：保持较高，最后阶段淡出
         const opacityProgress = Math.min(1, this.particleLife / 400);
         this.particles.material.opacity = opacityProgress > 0.25 ? 0.9 : opacityProgress * 3.6;
@@ -253,6 +340,12 @@ class Firework3D {
             this.particles.geometry.dispose();
             this.particles.material.dispose();
             this.particles = null;
+        }
+        if (this.trails) {
+            this.scene.remove(this.trails);
+            this.trails.geometry.dispose();
+            this.trails.material.dispose();
+            this.trails = null;
         }
         if (this.trail) {
             this.scene.remove(this.trail);
@@ -386,7 +479,12 @@ class FireworkSystem {
             const cfg = window.FireworkConfig;
             const modeConfig = cfg ? cfg.modes[cfg.currentMode] : { interval: 4000, burstCount: 1, burstDelay: 0 };
             
-            if (now - this.lastLaunchTime > modeConfig.interval) {
+            // 舒缓模式：等待所有烟花消失后再发射
+            // 激烈模式：按时间间隔发射
+            const isRelaxedMode = cfg && cfg.currentMode === 'relaxed';
+            const canLaunch = isRelaxedMode ? this.fireworks.length === 0 : true;
+            
+            if (canLaunch && now - this.lastLaunchTime > modeConfig.interval) {
                 const count = modeConfig.burstCount || 1;
                 for (let i = 0; i < count; i++) {
                     setTimeout(() => this.launch(), i * (modeConfig.burstDelay || 0));
