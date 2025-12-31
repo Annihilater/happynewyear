@@ -29,6 +29,7 @@ fi
 
 # 设置默认值
 export APP_PORT=${APP_PORT:-5861}
+export APP_PORT_XLIGHT=${APP_PORT_XLIGHT:-5862}
 export CONTAINER_PORT=${CONTAINER_PORT:-80}
 export TZ=${TZ:-Asia/Shanghai}
 
@@ -48,7 +49,12 @@ sleep 3
 # 检查状态
 if docker-compose ps | grep -q "Up"; then
     echo -e "${GREEN}✅ 服务启动成功！${NC}"
-    echo -e "${GREEN}🌐 访问地址: http://localhost:${APP_PORT}${NC}"
+    echo ""
+    echo -e "${GREEN}🌐 访问地址:${NC}"
+    echo -e "   - 站点1: http://localhost:${APP_PORT}"
+    if docker-compose ps | grep -q "happynewyear-xlight.*Up"; then
+        echo -e "   - 站点2: http://localhost:${APP_PORT_XLIGHT}"
+    fi
     echo -e "${GREEN}🎊 新年快乐！${NC}"
     
     # 显示日志

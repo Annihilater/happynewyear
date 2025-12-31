@@ -68,6 +68,35 @@ cd deploy
 
 访问：**<http://localhost:5861>**
 
+**多站点部署**：
+
+系统支持同时部署多个站点，每个站点可以配置不同的标题和标语：
+
+1. **配置环境变量**（编辑 `deploy/.env` 文件）：
+```bash
+# 站点1配置
+APP_PORT=5861
+SITE_SUBTITLE=倒计时
+SITE_TAGLINE=点亮希望，照亮未来
+SITE_YEAR=2026
+
+# 站点2配置（XLIGHT站点）
+APP_PORT_XLIGHT=5862
+SITE_SUBTITLE_XLIGHT=XLIGHT 前路有光
+SITE_TAGLINE_XLIGHT=点亮希望，照亮未来
+SITE_YEAR_XLIGHT=2026
+```
+
+2. **启动所有站点**：
+```bash
+cd deploy
+./start.sh
+```
+
+3. **访问不同站点**：
+- 站点1：http://localhost:5861
+- 站点2：http://localhost:5862
+
 **管理命令**：
 
 ```bash
@@ -253,6 +282,37 @@ happynewyear/
 - 支持触摸事件自动初始化音频上下文
 
 ## 🎨 自定义
+
+### 配置站点标题和标语
+
+#### 方法一：通过环境变量（Docker部署推荐）
+
+编辑 `deploy/.env` 文件：
+
+```bash
+# 站点配置
+SITE_SUBTITLE=倒计时
+SITE_TAGLINE=点亮希望，照亮未来
+SITE_YEAR=2026
+```
+
+重启容器后生效：
+```bash
+cd deploy
+./restart.sh
+```
+
+#### 方法二：修改配置文件（本地开发）
+
+编辑 `src/site-config.json`：
+
+```json
+{
+  "subtitle": "倒计时",
+  "tagline": "点亮希望，照亮未来",
+  "year": "2026"
+}
+```
 
 ### 修改目标日期
 

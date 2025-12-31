@@ -1,4 +1,5 @@
 services:
+  # 站点1：默认倒计时站点
   happynewyear:
     image: klause/happynewyear:latest
     container_name: happynewyear-web
@@ -7,8 +8,33 @@ services:
     restart: unless-stopped
     environment:
     - TZ=${TZ:-Asia/Shanghai}
+    - SITE_SUBTITLE=${SITE_SUBTITLE:-倒计时}
+    - SITE_TAGLINE=${SITE_TAGLINE:-点亮希望，照亮未来}
+    - SITE_YEAR=${SITE_YEAR:-2026}
     labels:
     - "com.happynewyear.description=2026新年倒计时网站"
+    - "com.happynewyear.version=1.0"
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # 站点2：示例 - XLIGHT站点
+  happynewyear-xlight:
+    image: klause/happynewyear:latest
+    container_name: happynewyear-xlight
+    ports:
+    - "${APP_PORT_XLIGHT:-5862}:80"
+    restart: unless-stopped
+    environment:
+    - TZ=${TZ:-Asia/Shanghai}
+    - SITE_SUBTITLE=${SITE_SUBTITLE_XLIGHT:-XLIGHT 前路有光}
+    - SITE_TAGLINE=${SITE_TAGLINE_XLIGHT:-点亮希望，照亮未来}
+    - SITE_YEAR=${SITE_YEAR_XLIGHT:-2026}
+    labels:
+    - "com.happynewyear.description=XLIGHT 2026新年倒计时网站"
     - "com.happynewyear.version=1.0"
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/" ]

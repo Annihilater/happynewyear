@@ -3,6 +3,35 @@
  * 初始化所有模块并处理交互
  */
 
+// 站点配置
+let SiteConfig = {
+    subtitle: '倒计时',
+    tagline: '点亮希望，照亮未来',
+    year: '2026'
+};
+
+// 加载站点配置
+async function loadSiteConfig() {
+    try {
+        const response = await fetch('site-config.json');
+        if (response.ok) {
+            const config = await response.json();
+            SiteConfig = { ...SiteConfig, ...config };
+        }
+    } catch (e) {
+        console.warn('加载站点配置失败，使用默认值:', e);
+    }
+    
+    // 更新页面显示
+    const subtitleEl = document.getElementById('site-subtitle');
+    const taglineEl = document.getElementById('site-tagline');
+    const yearEl = document.getElementById('site-year');
+    
+    if (subtitleEl) subtitleEl.textContent = SiteConfig.subtitle;
+    if (taglineEl) taglineEl.textContent = SiteConfig.tagline;
+    if (yearEl) yearEl.textContent = SiteConfig.year;
+}
+
 function initApp() {
     // ==================== 初始化配置 ====================
     FireworkConfig.init();
@@ -558,6 +587,9 @@ function initApp() {
 }
 
 // ==================== 初始化 ====================
+
+// 加载站点配置
+loadSiteConfig();
 
 // 等待DOM加载和烟花系统就绪
 if (document.readyState === 'loading') {

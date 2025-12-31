@@ -31,7 +31,9 @@ chmod +x *.sh
 ./quick-deploy.sh
 ```
 
-服务将在 **http://localhost:5861** 启动（端口可在 `app.conf` 中配置）
+服务将在 **http://localhost:5861** 启动（端口可在 `.env` 或 `app.conf` 中配置）
+
+**多站点部署**：系统支持同时部署多个站点，每个站点可配置不同的标题和标语，详见下方"多站点配置"章节。
 
 ### 手动部署
 
@@ -129,18 +131,94 @@ cd deploy
 ```yaml
 services:
   happynewyear:
-    image: happynewyear:latest
+    image: klause/happynewyear:latest
     ports:
-      - "${APP_PORT:-5861}:${CONTAINER_PORT:-80}"  # 端口映射（从环境变量读取）
+      - "${APP_PORT:-5861}:80"  # 端口映射（从环境变量读取）
     restart: unless-stopped
     environment:
       - TZ=${TZ:-Asia/Shanghai} # 时区设置
+      - SITE_SUBTITLE=${SITE_SUBTITLE:-倒计时}  # 站点副标题
+      - SITE_TAGLINE=${SITE_TAGLINE:-点亮希望，照亮未来}  # 站点标语
+      - SITE_YEAR=${SITE_YEAR:-2026}  # 目标年份
 ```
 
 **配置加载顺序**：
 1. 优先使用 `.env` 文件（如果存在）
 2. 否则使用 `app.conf` 文件
 3. 脚本会自动加载配置并导出环境变量供 docker-compose 使用
+
+## 🎯 多站点配置
+
+系统支持同时部署多个站点，每个站点可以配置不同的标题、标语和端口。
+
+### 配置步骤
+
+1. **编辑环境变量文件**（`deploy/.env`）：
+
+```bash
+# ==================== 站点1配置 ====================
+APP_PORT=5861
+SITE_SUBTITLE=倒计时
+SITE_TAGLINE=点亮希望，照亮未来
+SITE_YEAR=2026
+
+# ==================== 站点2配置（XLIGHT站点）====================
+APP_PORT_XLIGHT=5862
+SITE_SUBTITLE_XLIGHT=XLIGHT 前路有光
+SITE_TAGLINE_XLIGHT=点亮希望，照亮未来
+SITE_YEAR_XLIGHT=2026
+
+# ==================== 通用配置 ====================
+TZ=Asia/Shanghai
+```
+
+2. **启动所有站点**：
+
+```bash
+cd deploy
+./start.sh
+```
+
+3. **访问不同站点**：
+- 站点1：http://localhost:5861
+- 站点2：http://localhost:5862
+
+### 添加更多站点
+
+在 `docker-compose.yml` 中添加新的服务：
+
+```yaml
+services:
+  # ... 现有服务 ...
+  
+  # 站点3：自定义站点
+  happynewyear-custom:
+    image: klause/happynewyear:latest
+    container_name: happynewyear-custom
+    ports:
+    - "${APP_PORT_CUSTOM:-5863}:80"
+    restart: unless-stopped
+    environment:
+    - TZ=${TZ:-Asia/Shanghai}
+    - SITE_SUBTITLE=${SITE_SUBTITLE_CUSTOM:-自定义标题}
+    - SITE_TAGLINE=${SITE_TAGLINE_CUSTOM:-自定义标语}
+    - SITE_YEAR=${SITE_YEAR_CUSTOM:-2026}
+```
+
+然后在 `.env` 文件中添加对应的配置：
+
+```bash
+APP_PORT_CUSTOM=5863
+SITE_SUBTITLE_CUSTOM=自定义标题
+SITE_TAGLINE_CUSTOM=自定义标语
+SITE_YEAR_CUSTOM=2026
+```
+
+### 工作原理
+
+1. **启动脚本**（`entrypoint.sh`）会在容器启动时根据环境变量生成 `site-config.json`
+2. **前端代码**（`main.js`）会在页面加载时读取 `site-config.json` 并更新页面显示
+3. **每个容器**都有独立的配置，互不干扰
 
 ### Dockerfile
 ```dockerfile
