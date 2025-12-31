@@ -34,6 +34,10 @@
   - 短促咔嗒声（三角波200Hz→50Hz）
 - **Web Audio API生成** - 非预录音频
 - **动态压缩器** - 防止爆音
+- **移动端音频解锁** - 自动处理iOS Safari等移动浏览器的音频限制
+  - 用户首次交互时自动解锁音频上下文
+  - 支持触摸事件触发音频初始化
+  - 智能检测移动端并显示友好提示
 
 ### ⏰ 其他功能
 
@@ -162,15 +166,29 @@ happynewyear/
 
 ## 🎮 交互方式
 
-### 鼠标操作
+### 桌面端操作
 
 | 操作 | 效果 |
 |------|------|
 | 点击遮罩层 | 启用音效并开始烟花 |
 | 点击页面任意位置 | 在点击位置爆炸烟花 |
+| 鼠标移动 | 粒子跟随鼠标轨迹 |
 | 点击右上角🔇/🔊 | 切换音效开关 |
 | 点击右上角⚙️ | 打开设置面板 |
 | 输入愿望并发送 | 愿望变成弹幕 + 烟花庆祝 |
+
+### 移动端操作
+
+| 操作 | 效果 |
+|------|------|
+| 轻触遮罩层 | 启用音效并开始烟花（移动端必需） |
+| 轻触屏幕任意位置 | 在触摸位置爆炸烟花 |
+| 触摸移动 | 粒子跟随手指轨迹 |
+| 点击右上角🔇/🔊 | 切换音效开关 |
+| 点击右上角⚙️ | 打开设置面板 |
+| 输入愿望并发送 | 愿望变成弹幕 + 烟花庆祝 |
+
+**移动端音频提示**：首次打开页面会显示"轻触屏幕启用音频并发射烟花"提示，点击后即可启用音效。
 
 ### 键盘快捷键
 
@@ -216,11 +234,23 @@ happynewyear/
 
 ## 📱 兼容性
 
+### 桌面浏览器
 - ✅ Chrome 60+
 - ✅ Firefox 55+
 - ✅ Safari 12+
 - ✅ Edge 79+
-- ✅ 移动端浏览器
+
+### 移动端浏览器
+- ✅ iOS Safari 12+（需要用户交互启用音频）
+- ✅ Chrome Mobile 60+
+- ✅ Firefox Mobile 55+
+- ✅ Samsung Internet 8+
+
+**移动端音频说明**：
+- 移动端浏览器（特别是iOS Safari）对音频有严格限制
+- 首次打开需要用户交互（点击/触摸）才能启用音频
+- 系统会自动检测移动端并显示友好提示
+- 支持触摸事件自动初始化音频上下文
 
 ## 🎨 自定义
 
@@ -279,6 +309,12 @@ this.wishes = [
 - `bloomRadius`: 0.5 - 光晕半径
 - `trailOpacity`: 0.39707 - 拖尾不透明度
 
+### 音频参数
+
+- `volume`: 0.3 - 默认音量（0-1）
+- `soundEnabled`: true - 音效开关
+- **移动端音频解锁**：自动处理，无需配置
+
 ### 模式配置
 
 - **舒缓模式**：interval=4000ms, burstCount=1
@@ -311,11 +347,45 @@ https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap
 - `js/danmaku.js` - 弹幕系统
 - `js/main.js` - 主控制器
 
+## 🔧 技术实现细节
+
+### 移动端音频处理
+
+移动端浏览器（特别是iOS Safari）对音频有严格的自动播放策略：
+
+1. **AudioContext状态管理**
+   - 默认状态：`suspended`（需要用户交互）
+   - 目标状态：`running`（可以播放音频）
+   - 通过`unlockAudio()`方法自动处理状态转换
+
+2. **解锁机制**
+   ```javascript
+   // 方法1: 直接resume
+   await ctx.resume();
+   
+   // 方法2: iOS Safari特殊处理
+   // 播放极短静音音频来"解锁"
+   const buffer = ctx.createBuffer(1, 1, 22050);
+   const source = ctx.createBufferSource();
+   source.buffer = buffer;
+   source.connect(ctx.destination);
+   source.start(0);
+   source.stop(0);
+   await ctx.resume();
+   ```
+
+3. **用户交互触发**
+   - 覆盖层点击/触摸事件
+   - 触摸屏幕发射烟花时
+   - 切换音效开关时
+   - 所有交互都会自动尝试解锁音频
+
 ## 🎓 学习资源
 
 - [Three.js官方文档](https://threejs.org/docs/)
 - [UnrealBloomPass示例](https://threejs.org/examples/?q=bloom#webgl_postprocessing_unreal_bloom)
 - [Web Audio API教程](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+- [移动端音频限制说明](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices#autoplay_policy)
 - [CodePen原始源码](https://codepen.io/sabosugi/pen/ByzBXQW)
 
 ## 📄 License
