@@ -4,11 +4,19 @@
 这是一个模仿 https://2026.xcodeman.com/ 的新年倒计时网站，具有动态烟花特效、背景音乐、倒计时器和弹幕祝福功能。
 
 ## 技术栈
-- 纯前端：HTML + CSS + JavaScript
-- Canvas 2D 实现烟花和星空效果
-- Web Audio API 生成烟花爆炸音效
-- CSS Animation 实现弹幕效果
-- LocalStorage 持久化用户设置
+- 纯前端：HTML + CSS + JavaScript (ES6 Modules)
+- **Three.js r160** - WebGL 3D渲染
+- **UnrealBloomPass** - 后期处理光晕效果（关键！）
+- **EffectComposer** - 渲染管线
+- **Canvas 2D** - 星空背景
+- **Web Audio API** - 生成烟花爆炸深度音效
+- **CSS Animation** - 弹幕效果
+- **LocalStorage** - 持久化用户设置
+
+## 源码参考
+- 原网站：https://2026.xcodeman.com/
+- CodePen源码：https://codepen.io/sabosugi/pen/ByzBXQW
+- 本地源码备份：`docs/source_code/`
 
 ---
 
@@ -138,16 +146,31 @@ happynewyear/
 
 ## 关键实现细节
 
-### 烟花粒子系统
-- 每个烟花根据 particleCount / 100 计算实际粒子数
-- 粒子使用 HSLA 颜色，支持色相变化
-- 粒子有生命周期，透明度随时间降低
-- 物理模拟包含重力和空气阻力
+### 烟花粒子系统（基于CodePen源码）
+- **粒子纹理**：32x32径向渐变圆形Sprite（`getSprite()`）
+- **颜色系统**：Mono（单色）/ Dual（双色互补）/ Tri（三色）
+- **球形分布**：`theta = random * 2π`, `phi = acos(2*random - 1)`
+- **两阶段物理**：
+  - 悬停期（hoverDuration）：高摩擦力 0.95494
+  - 下落期：重力 + 低摩擦力 0.98
+- **UnrealBloomPass**：后期处理光晕效果（bloomStrength: 1.495）
+- **拖尾效果**：全屏半透明黑色Quad（opacity: 0.39707）
+- **雾效**：`FogExp2(0x000000, 0.002)` 增加深度感
 
-### 音效生成
-- 使用 AudioContext 创建音频上下文
-- DynamicsCompressor 防止爆音
-- 多层音频使用不同的增益包络
+### 音效生成（Deep Boom Sound）
+- **三层声音合成**：
+  1. Sub-Bass Kick（正弦波 50Hz→20Hz，5秒）
+  2. 白噪声爆裂（低通滤波150Hz→30Hz，4.5秒）
+  3. 短促咔嗒声（三角波200Hz→50Hz，0.1秒）
+- **DynamicsCompressor**：threshold=-10, knee=40, ratio=12
+- **音量控制**：0-1可调节
+
+### Three.js场景配置
+- **相机**：PerspectiveCamera(60°, aspect, 0.1, 4000)
+- **相机位置**：(0, 0, 150) - 俯视视角
+- **背景星星**：3000个粒子，范围±600单位
+- **渲染器**：antialias=false, pixelRatio≤1.5（性能优化）
+- **Bloom参数**：strength=1.495, radius=0.5, threshold=0.0
 
 ### 配置持久化
 - 使用 localStorage 保存用户设置
@@ -177,4 +200,45 @@ happynewyear/
 
 ---
 
+## 源码来源与学习资源
+
+### CodePen原始源码
+- **URL**: https://codepen.io/sabosugi/pen/ByzBXQW
+- **作者**: Sabo Sugi
+- **标题**: Fireworks 2026 + Boom Sound
+- **本地备份**: `docs/source_code/`
+
+### 核心技术发现
+1. **UnrealBloomPass** - Three.js后期处理，虚幻引擎级光晕
+2. **简单Sprite** - 32x32径向渐变圆形，不是复杂水滴
+3. **颜色系统** - 随机Mono/Dual/Tri（单/双/三色）
+4. **悬停物理** - hoverDuration秒内高摩擦力，之后重力下落
+5. **全屏Quad** - 半透明黑色平面实现拖尾效果
+6. **场景雾效** - FogExp2增加深度和氛围
+
+### Three.js关键API
+```javascript
+// 粒子系统
+THREE.Points + THREE.PointsMaterial + THREE.BufferGeometry
+
+// 后期处理
+EffectComposer + RenderPass + UnrealBloomPass
+
+// 纹理
+THREE.CanvasTexture (动态生成Sprite)
+
+// 数学工具
+THREE.MathUtils.smoothstep (平滑过渡)
+```
+
+### 性能优化技巧
+- `renderer.autoClearColor = false` - 手动控制清除
+- `depthWrite: false` - 粒子不写入深度
+- `AdditiveBlending` - GPU硬件叠加
+- `pixelRatio ≤ 1.5` - 限制分辨率
+- `antialias: false` - 关闭抗锯齿（性能优先）
+
+---
+
 *最后更新：2024-12-31*
+*基于 CodePen sabosugi/ByzBXQW 源码*

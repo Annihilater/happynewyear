@@ -267,16 +267,23 @@
         </div>
     </main>
     
-<!-- Three.js 库 -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Import Map for Three.js -->
+        <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+        </script>
         
         <!-- JavaScript 文件 -->
         <script src="js/audio.js"></script>
         <script src="js/config.js"></script>
         <script src="js/starfield.js"></script>
-        <script src="js/fireworks.js"></script>
         <script src="js/countdown.js"></script>
         <script src="js/danmaku.js"></script>
-        <script src="js/main.js"></script>
+        <script type="module" src="js/fireworks.js"></script>
+        <script type="module" src="js/main.js"></script>
     </body>
 </html>
