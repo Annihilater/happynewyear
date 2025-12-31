@@ -40,71 +40,165 @@
         </button>
     </div>
     
-    <!-- 设置面板 -->
-    <div id="settings-panel" class="settings-panel hidden">
-        <div class="settings-content">
-            <div class="settings-header">
-                <h3>🎆 烟花设置</h3>
-                <button id="close-settings" class="close-btn">✕</button>
+    <!-- 高级设置面板 -->
+    <div id="settings-panel" class="adv-settings-panel">
+        
+        <div class="adv-settings-content">
+            <!-- Particles 粒子设置 -->
+            <div class="adv-section">
+                <button class="adv-section-header" data-section="particles">
+                    <span data-i18n="particles">Particles</span>
+                    <span class="adv-arrow">▼</span>
+                </button>
+                <div class="adv-section-body" id="section-particles">
+                    <div class="adv-row">
+                        <label data-i18n="particleCount">particleCount</label>
+                        <div class="adv-slider-group">
+                            <input type="range" id="cfg-particleCount" min="1000" max="50000" step="1000" value="23000">
+                            <span class="adv-value" id="val-particleCount">23000</span>
+                        </div>
+                    </div>
+                    <div class="adv-row">
+                        <label data-i18n="particleSize">particleSize</label>
+                        <div class="adv-slider-group">
+                            <input type="range" id="cfg-particleSize" min="0.3" max="2" step="0.05" value="0.8">
+                            <span class="adv-value" id="val-particleSize">0.8</span>
+                        </div>
+                    </div>
+                    <div class="adv-row">
+                        <label data-i18n="fadeSpeed">fadeSpeed</label>
+                        <div class="adv-slider-group">
+                            <input type="range" id="cfg-fadeSpeed" min="0.001" max="0.01" step="0.0001" value="0.00482">
+                            <span class="adv-value" id="val-fadeSpeed">0.00482</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <!-- 烟花模式 -->
-            <div class="settings-section">
-                <h4>烟花模式</h4>
-                <div class="mode-options">
-                    <label class="mode-option">
-                        <input type="radio" name="firework-mode" value="relaxed" checked>
-                        <div class="mode-card">
-                            <span class="mode-icon">🌙</span>
-                            <span class="mode-name">舒缓模式</span>
-                            <span class="mode-desc">一个接一个，适合平时欣赏</span>
+            <!-- Physics 物理设置 -->
+            <div class="adv-section">
+                <button class="adv-section-header" data-section="physics">
+                    <span data-i18n="physics">Physics</span>
+                    <span class="adv-arrow">▼</span>
+                </button>
+                <div class="adv-section-body" id="section-physics">
+                    <div class="adv-row">
+                        <label data-i18n="explosionForce">explosionForce</label>
+                        <div class="adv-slider-group">
+                            <input type="range" id="cfg-explosionForce" min="1" max="8" step="0.0025" value="3.3975">
+                            <span class="adv-value" id="val-explosionForce">3.3975</span>
                         </div>
-                    </label>
-                    <label class="mode-option">
-                        <input type="radio" name="firework-mode" value="intense">
-                        <div class="mode-card">
-                            <span class="mode-icon">🎉</span>
-                            <span class="mode-name">激烈模式</span>
-                            <span class="mode-desc">快速连发，适合跨年倒数</span>
+                    </div>
+                    <div class="adv-row">
+                        <label data-i18n="hoverDuration">hoverDuration</label>
+                        <div class="adv-slider-group">
+                            <input type="range" id="cfg-hoverDuration" min="0.5" max="3" step="0.1" value="1.5">
+                            <span class="adv-value" id="val-hoverDuration">1.5</span>
                         </div>
-                    </label>
+                    </div>
+                    <div class="adv-row">
+                        <label data-i18n="gravity">gravity</label>
+                        <div class="adv-slider-group">
+                            <input type="range" id="cfg-gravity" min="0.001" max="0.01" step="0.00005" value="0.00265">
+                            <span class="adv-value" id="val-gravity">0.00265</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Deep Audio 音效设置 -->
+            <div class="adv-section">
+                <button class="adv-section-header" data-section="audio">
+                    <span data-i18n="deepAudio">Deep Audio</span>
+                    <span class="adv-arrow">▼</span>
+                </button>
+                <div class="adv-section-body" id="section-audio">
+                    <div class="adv-row">
+                        <label data-i18n="soundEnabled">soundEnabled</label>
+                        <div class="adv-checkbox-group">
+                            <input type="checkbox" id="cfg-soundEnabled" checked>
+                            <span class="adv-checkbox-visual"></span>
+                        </div>
+                    </div>
+                    <div class="adv-row">
+                        <label data-i18n="volume">volume</label>
+                        <div class="adv-slider-group">
+                            <input type="range" id="cfg-volume" min="0" max="1" step="0.05" value="0.5">
+                            <span class="adv-value" id="val-volume">0.5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 重置按钮 -->
+            <div class="adv-section">
+                <button id="reset-settings" class="reset-btn">
+                    <span>🔄</span>
+                    <span data-i18n="resetSettings">重置为默认值</span>
+                </button>
+            </div>
+            
+            <!-- 语言切换 -->
+            <div class="adv-section">
+                <div class="adv-lang-row">
+                    <span>🌐</span>
+                    <button id="lang-toggle" class="lang-toggle-btn">
+                        <span id="lang-label">中文 / EN</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 模式切换 -->
+            <div class="adv-section">
+                <button class="adv-section-header" data-section="mode">
+                    <span data-i18n="mode">Mode</span>
+                    <span class="adv-arrow">▼</span>
+                </button>
+                <div class="adv-section-body" id="section-mode">
+                    <div class="adv-mode-row">
+                        <div class="mode-toggle-group full">
+                            <button class="mode-toggle-btn active" data-mode="relaxed">
+                                <span>🌙</span>
+                                <span data-i18n="relaxed">舒缓</span>
+                            </button>
+                            <button class="mode-toggle-btn" data-mode="intense">
+                                <span>🎉</span>
+                                <span data-i18n="intense">激烈</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="adv-row mode-desc">
+                        <small id="mode-description" data-i18n="relaxedDesc">一个接一个，适合平时欣赏</small>
+                    </div>
                 </div>
             </div>
             
             <!-- 定时切换 -->
-            <div class="settings-section">
-                <h4>定时切换</h4>
-                <div class="schedule-form">
-                    <input type="time" id="schedule-time" class="schedule-input">
-                    <select id="schedule-mode" class="schedule-select">
-                        <option value="relaxed">切换到舒缓模式</option>
-                        <option value="intense">切换到激烈模式</option>
-                    </select>
-                    <button id="add-schedule" class="schedule-add-btn">添加</button>
-                </div>
-                <div id="schedule-list" class="schedule-list">
-                    <!-- 动态生成 -->
-                </div>
-            </div>
-            
-            <!-- 快捷设置 -->
-            <div class="settings-section">
-                <h4>快捷设置</h4>
-                <div class="quick-settings">
-                    <button class="quick-btn" data-action="countdown-intense">
-                        🎊 跨年倒数时自动激烈模式
-                    </button>
-                    <button class="quick-btn" data-action="morning-relaxed">
-                        🌅 每天8点切换舒缓模式
-                    </button>
+            <div class="adv-section">
+                <button class="adv-section-header" data-section="schedule">
+                    <span data-i18n="schedule">Schedule</span>
+                    <span class="adv-arrow">▼</span>
+                </button>
+                <div class="adv-section-body" id="section-schedule">
+                    <div class="schedule-row">
+                        <input type="time" id="schedule-time" class="schedule-time-input">
+                        <select id="schedule-mode" class="schedule-mode-select">
+                            <option value="relaxed" data-i18n="relaxed">舒缓</option>
+                            <option value="intense" data-i18n="intense">激烈</option>
+                        </select>
+                        <button id="add-schedule-btn" class="schedule-add-btn">+</button>
+                    </div>
+                    <div id="schedule-list" class="schedule-list"></div>
                 </div>
             </div>
             
-            <!-- 当前状态 -->
-            <div class="settings-section">
-                <div class="current-status">
-                    <span>当前模式：</span>
-                    <span id="current-mode-display" class="mode-badge">舒缓模式</span>
+            <!-- 语言切换 -->
+            <div class="adv-section">
+                <div class="adv-lang-row">
+                    <span>🌐</span>
+                    <button id="lang-toggle" class="lang-toggle-btn">
+                        <span id="lang-label">中文 / EN</span>
+                    </button>
                 </div>
             </div>
         </div>
