@@ -40,7 +40,7 @@ class Firework3D {
         this.particleCount = Math.floor(baseCount * this.scale);
         
         // 粒子大小：深度越大（离相机越近）粒子越大
-        const sizeMultiplier = 1 + (1 - this.depth) * 2; // 近处烟花粒子更大
+        const sizeMultiplier = 1.5 + (1 - this.depth) * 2.5; // 近处烟花粒子更大，基础增大
         this.particleSize = (particles.particleSize || 0.8) * this.scale * sizeMultiplier;
         
         this.fadeSpeed = particles.fadeSpeed || 0.00482;
@@ -179,21 +179,113 @@ class Firework3D {
         this.velocities = velocities;
         this.lifetimes = lifetimes;
         
-        const material = new THREE.PointsMaterial({
-            size: 0.15,
+        // 使用自定义Shader Material实现水滴形粒子
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 }
+            },
+            vertexShader: `
+                attribute vec3 velocity;
+                attribute float size;
+                attribute float lifetime;
+                varying vec3 vColor;
+                varying float vLifetime;
+                varying vec3 vVelocity;
+                
+                void main() {
+                    vColor = color;
+                    vLifetime = lifetime;
+                    vVelocity = velocity;
+                    
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    
+                    // 根据速度动态调整大小（快速移动的粒子更大）
+                    float speedFactor = 1.0 + length(velocity) * 0.05;
+                    gl_PointSize = size * speedFactor * (400.0 / -mvPosition.z); // 增大基础尺寸
+                    
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                varying vec3 vColor;
+                varying float vLifetime;
+                varying vec3 vVelocity;
+                
+                void main() {
+                    // 中心点坐标 (-0.5 到 0.5)
+                    vec2 coord = gl_PointCoord - vec2(0.5);
+                    
+                    // 计算速度大小，用于拉伸
+                    float speed = length(vVelocity);
+                    float speedFactor = clamp(speed * 0.3, 0.0, 2.0);
+                    
+                    // 水滴形状：上部圆润，下部尖锐（拉伸）
+                    // Y轴拉伸形成水滴
+                    float yStretch = 1.0 + speedFactor * 1.5;
+                    vec2 dropCoord = vec2(coord.x, coord.y * yStretch);
+                    
+                    // 计算到中心的距离
+                    float dist = length(dropCoord);
+                    
+                    // 水滴主体（圆形到椭圆）
+                    float dropShape = smoothstep(0.5, 0.0, dist);
+                    
+                    // 尾部拖尾（向下延伸）
+                    float tail = 0.0;
+                    if (coord.y > 0.0) {
+                        // 尾部逐渐变细
+                        float tailWidth = 0.3 * (1.0 - coord.y * 2.0);
+                        float tailDist = abs(coord.x) / max(tailWidth, 0.01);
+                        tail = smoothstep(1.0, 0.0, tailDist) * smoothstep(1.0, 0.0, coord.y * 2.0);
+                    }
+                    
+                    // 组合形状
+                    float shape = max(dropShape, tail * 0.7);
+                    
+                    // 3D高光效果（模拟立体感）
+                    vec2 highlightPos = coord - vec2(-0.15, -0.15); // 高光偏移
+                    float highlight = smoothstep(0.25, 0.0, length(highlightPos)) * 0.8;
+                    
+                    // 核心明亮区域
+                    float core = smoothstep(0.3, 0.0, dist) * 1.5;
+                    
+                    // 外层光晕
+                    float glow = smoothstep(0.55, 0.3, dist) * 0.5;
+                    
+                    // 总亮度
+                    float brightness = shape + core + glow + highlight;
+                    
+                    // 颜色混合（增加亮度和饱和度）
+                    vec3 finalColor = vColor * (0.8 + brightness * 0.8);
+                    
+                    // 添加白色高光
+                    finalColor = mix(finalColor, vec3(1.0), highlight * 0.5);
+                    
+                    // 透明度
+                    float alpha = shape * vLifetime * 0.95;
+                    
+                    if (alpha < 0.01) discard;
+                    
+                    gl_FragColor = vec4(finalColor, alpha);
+                }
+            `,
             vertexColors: true,
             transparent: true,
-            opacity: 0.95,
             blending: THREE.AdditiveBlending,
-            depthWrite: false,
-            sizeAttenuation: true
+            depthWrite: false
         });
+        
+        // 添加velocity属性用于shader
+        const velocityAttr = new THREE.Float32BufferAttribute(velocities, 3);
+        const sizeAttr = new THREE.Float32BufferAttribute(sizes, 1);
+        const lifetimeAttr = new THREE.Float32BufferAttribute(lifetimes, 1);
+        
+        geometry.setAttribute('velocity', velocityAttr);
+        geometry.setAttribute('size', sizeAttr);
+        geometry.setAttribute('lifetime', lifetimeAttr);
         
         this.particles = new THREE.Points(geometry, material);
         this.scene.add(this.particles);
-        
-        // 创建拖尾效果（水滴形状）
-        this.createTrails();
     }
     
     createTrails() {
@@ -244,10 +336,9 @@ class Firework3D {
         
         this.time++;
         const positions = this.particles.geometry.attributes.position.array;
+        const velocities = this.particles.geometry.attributes.velocity.array;
         const sizes = this.particles.geometry.attributes.size.array;
-        
-        // 拖尾位置数组
-        const trailPositions = this.trails ? this.trails.geometry.attributes.position.array : null;
+        const lifetimeAttr = this.particles.geometry.attributes.lifetime.array;
         
         // 分阶段物理：
         // 0-80帧：快速爆炸扩散（高阻力）
@@ -259,48 +350,23 @@ class Firework3D {
         for (let i = 0; i < this.particleCount; i++) {
             const i3 = i * 3;
             
-            // 保存当前位置到历史（用于拖尾）
-            if (this.particleHistory && this.particleHistory[i]) {
-                this.particleHistory[i].push({
-                    x: positions[i3],
-                    y: positions[i3 + 1],
-                    z: positions[i3 + 2]
-                });
-                // 只保留最近8个位置
-                if (this.particleHistory[i].length > 8) {
-                    this.particleHistory[i].shift();
-                }
-            }
-            
             // 更新位置
-            positions[i3] += this.velocities[i3];
-            positions[i3 + 1] += this.velocities[i3 + 1];
-            positions[i3 + 2] += this.velocities[i3 + 2];
+            positions[i3] += velocities[i3];
+            positions[i3 + 1] += velocities[i3 + 1];
+            positions[i3 + 2] += velocities[i3 + 2];
             
             // 重力（Y方向向下）
-            this.velocities[i3 + 1] -= this.gravity * gravityMultiplier;
+            velocities[i3 + 1] -= this.gravity * gravityMultiplier;
             
             // 空气阻力
-            this.velocities[i3] *= friction;
-            this.velocities[i3 + 1] *= friction;
-            this.velocities[i3 + 2] *= friction;
+            velocities[i3] *= friction;
+            velocities[i3 + 1] *= friction;
+            velocities[i3 + 2] *= friction;
             
-            // 更新拖尾（水滴效果）
-            if (trailPositions && this.particleHistory[i] && this.particleHistory[i].length > 0) {
-                const i6 = i * 6; // 每个粒子2个点（起点和终点）
-                const history = this.particleHistory[i];
-                const tailPos = history[0]; // 最早的位置作为拖尾
-                
-                // 拖尾起点（尾部）
-                trailPositions[i6] = tailPos.x;
-                trailPositions[i6 + 1] = tailPos.y;
-                trailPositions[i6 + 2] = tailPos.z;
-                
-                // 拖尾终点（当前位置）
-                trailPositions[i6 + 3] = positions[i3];
-                trailPositions[i6 + 4] = positions[i3 + 1];
-                trailPositions[i6 + 5] = positions[i3 + 2];
-            }
+            // 更新velocity属性（shader需要）
+            this.velocities[i3] = velocities[i3];
+            this.velocities[i3 + 1] = velocities[i3 + 1];
+            this.velocities[i3 + 2] = velocities[i3 + 2];
             
             // 淡出：前300帧保持，300-400帧淡出
             if (this.time > 300) {
@@ -310,6 +376,9 @@ class Firework3D {
             }
             if (this.lifetimes[i] < 0) this.lifetimes[i] = 0;
             
+            // 更新lifetime属性
+            lifetimeAttr[i] = this.lifetimes[i];
+            
             // 粒子大小：前期保持，后期缩小
             if (this.time > 200) {
                 sizes[i] *= 0.995;
@@ -317,19 +386,14 @@ class Firework3D {
         }
         
         this.particles.geometry.attributes.position.needsUpdate = true;
+        this.particles.geometry.attributes.velocity.needsUpdate = true;
         this.particles.geometry.attributes.size.needsUpdate = true;
+        this.particles.geometry.attributes.lifetime.needsUpdate = true;
         
-        // 更新拖尾
-        if (this.trails) {
-            this.trails.geometry.attributes.position.needsUpdate = true;
-            // 拖尾透明度随整体透明度变化
-            const opacityProgress = Math.min(1, this.particleLife / 400);
-            this.trails.material.opacity = opacityProgress > 0.25 ? 0.5 : opacityProgress * 2;
+        // 更新时间uniform
+        if (this.particles.material.uniforms) {
+            this.particles.material.uniforms.time.value = this.time * 0.01;
         }
-        
-        // 整体透明度：保持较高，最后阶段淡出
-        const opacityProgress = Math.min(1, this.particleLife / 400);
-        this.particles.material.opacity = opacityProgress > 0.25 ? 0.9 : opacityProgress * 3.6;
         
         this.particleLife--;
     }
@@ -338,14 +402,10 @@ class Firework3D {
         if (this.particles) {
             this.scene.remove(this.particles);
             this.particles.geometry.dispose();
-            this.particles.material.dispose();
+            if (this.particles.material.dispose) {
+                this.particles.material.dispose();
+            }
             this.particles = null;
-        }
-        if (this.trails) {
-            this.scene.remove(this.trails);
-            this.trails.geometry.dispose();
-            this.trails.material.dispose();
-            this.trails = null;
         }
         if (this.trail) {
             this.scene.remove(this.trail);
