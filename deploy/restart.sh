@@ -26,11 +26,16 @@ fi
 
 # 设置默认值
 export APP_PORT=${APP_PORT:-5861}
+export APP_PORT_XLIGHT=${APP_PORT_XLIGHT:-5862}
 export CONTAINER_PORT=${CONTAINER_PORT:-80}
 export TZ=${TZ:-Asia/Shanghai}
 
-# 重启服务
-docker-compose restart
+# 重启服务（先down再up，确保环境变量正确传递）
+echo -e "${YELLOW}🔄 停止容器...${NC}"
+docker-compose down
+
+echo -e "${YELLOW}🚀 启动容器...${NC}"
+docker-compose up -d
 
 # 等待
 sleep 2

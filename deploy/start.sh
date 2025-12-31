@@ -42,11 +42,24 @@ export TZ=${TZ:-Asia/Shanghai}
 if docker-compose ps | grep -q "Up"; then
     echo -e "${YELLOW}⚠️  容器已在运行，将停止并重新启动以应用新配置...${NC}"
     docker-compose down
+    sleep 1
 fi
 
 # 启动服务（使用环境变量）
 echo -e "${YELLOW}🚀 启动服务...${NC}"
+# 确保环境变量正确传递
 docker-compose up -d
+
+# 等待容器启动
+sleep 2
+
+# 验证环境变量是否正确传递
+echo -e "${YELLOW}🔍 验证环境变量传递:${NC}"
+echo "站点1环境变量:"
+docker exec happynewyear-web env 2>/dev/null | grep "SITE_SUBTITLE" || echo "  容器未启动或无法访问"
+echo "站点2环境变量:"
+docker exec happynewyear-xlight env 2>/dev/null | grep "SITE_SUBTITLE" || echo "  容器未启动或无法访问"
+echo ""
 
 # 等待服务启动
 echo -e "${YELLOW}⏳ 等待服务启动...${NC}"
