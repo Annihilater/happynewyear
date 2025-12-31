@@ -26,6 +26,90 @@
         </div>
     </div>
     
+    <!-- 控制按钮组 -->
+    <div class="control-buttons">
+        <!-- 音量控制按钮 -->
+        <button id="sound-toggle" class="control-btn" title="开启/关闭音效">
+            <span class="icon-on">🔊</span>
+            <span class="icon-off">🔇</span>
+        </button>
+        
+        <!-- 设置按钮 -->
+        <button id="settings-btn" class="control-btn" title="烟花设置">
+            ⚙️
+        </button>
+    </div>
+    
+    <!-- 设置面板 -->
+    <div id="settings-panel" class="settings-panel hidden">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h3>🎆 烟花设置</h3>
+                <button id="close-settings" class="close-btn">✕</button>
+            </div>
+            
+            <!-- 烟花模式 -->
+            <div class="settings-section">
+                <h4>烟花模式</h4>
+                <div class="mode-options">
+                    <label class="mode-option">
+                        <input type="radio" name="firework-mode" value="relaxed" checked>
+                        <div class="mode-card">
+                            <span class="mode-icon">🌙</span>
+                            <span class="mode-name">舒缓模式</span>
+                            <span class="mode-desc">一个接一个，适合平时欣赏</span>
+                        </div>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="firework-mode" value="intense">
+                        <div class="mode-card">
+                            <span class="mode-icon">🎉</span>
+                            <span class="mode-name">激烈模式</span>
+                            <span class="mode-desc">快速连发，适合跨年倒数</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 定时切换 -->
+            <div class="settings-section">
+                <h4>定时切换</h4>
+                <div class="schedule-form">
+                    <input type="time" id="schedule-time" class="schedule-input">
+                    <select id="schedule-mode" class="schedule-select">
+                        <option value="relaxed">切换到舒缓模式</option>
+                        <option value="intense">切换到激烈模式</option>
+                    </select>
+                    <button id="add-schedule" class="schedule-add-btn">添加</button>
+                </div>
+                <div id="schedule-list" class="schedule-list">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+            
+            <!-- 快捷设置 -->
+            <div class="settings-section">
+                <h4>快捷设置</h4>
+                <div class="quick-settings">
+                    <button class="quick-btn" data-action="countdown-intense">
+                        🎊 跨年倒数时自动激烈模式
+                    </button>
+                    <button class="quick-btn" data-action="morning-relaxed">
+                        🌅 每天8点切换舒缓模式
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 当前状态 -->
+            <div class="settings-section">
+                <div class="current-status">
+                    <span>当前模式：</span>
+                    <span id="current-mode-display" class="mode-badge">舒缓模式</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- 弹幕容器 -->
     <div id="danmaku-container"></div>
     
@@ -89,12 +173,9 @@
         </div>
     </main>
     
-    <!-- 音频元素 (使用在线音效) -->
-    <audio id="firework-sound" preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/2971/2971-preview.mp3" type="audio/mpeg">
-    </audio>
-
     <!-- JavaScript 文件 -->
+    <script src="js/audio.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/starfield.js"></script>
     <script src="js/fireworks.js"></script>
     <script src="js/countdown.js"></script>
