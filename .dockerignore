@@ -26,7 +26,13 @@ Thumbs.db
 README.md
 DESIGN.md
 
-# 部署文件本身
+# 部署文件本身（但保留 entrypoint.sh，容器启动需要）
 deploy/*.sh
+!deploy/entrypoint.sh
+deploy/docker-compose.yml
+deploy/app.conf
+deploy/env.example
+deploy/README.md
+deploy/DEPLOY_GUIDE.md
 docker-compose.yml
 Dockerfile
