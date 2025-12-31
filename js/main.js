@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const countdown = new Countdown({
         targetDate: new Date('2026-01-01T00:00:00'),
         onComplete: () => {
-            // 跨年时自动切换到激烈模式
             FireworkConfig.setMode('intense');
             celebrateNewYear();
         }
@@ -28,53 +27,250 @@ document.addEventListener('DOMContentLoaded', () => {
     // 弹幕系统
     const danmaku = new Danmaku('danmaku-container');
     
-    // ==================== 烟花模式控制 ====================
+    // ==================== 设置面板控制 ====================
     
-    let launchInterval = null;
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsBtn = document.getElementById('settings-btn');
     
-    function applyFireworkMode(mode) {
-        const config = FireworkConfig.modes[mode];
-        
-        // 清除现有定时器
-        if (launchInterval) {
-            clearInterval(launchInterval);
+    // 切换设置面板
+    settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsPanel.classList.toggle('open');
+    });
+    
+    // 点击外部关闭
+    document.addEventListener('click', (e) => {
+        if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+            settingsPanel.classList.remove('open');
         }
-        
-        // 设置新的发射模式
-        fireworks.autoLaunch = true;
-        
-        launchInterval = setInterval(() => {
-            if (!fireworks.autoLaunch) return;
-            
-            // 根据模式发射烟花
-            for (let i = 0; i < config.burstCount; i++) {
-                setTimeout(() => {
-                    fireworks.launch();
-                }, i * config.burstDelay);
+    });
+    
+    // 折叠分区
+    document.querySelectorAll('.adv-section-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            section.classList.toggle('collapsed');
+        });
+    });
+    
+    // ==================== 参数滑块绑定 ====================
+    
+    // 粒子参数
+    bindSlider('cfg-particleCount', 'val-particleCount', 'particles', 'particleCount');
+    bindSlider('cfg-particleSize', 'val-particleSize', 'particles', 'particleSize');
+    bindSlider('cfg-fadeSpeed', 'val-fadeSpeed', 'particles', 'fadeSpeed');
+    
+    // 物理参数
+    bindSlider('cfg-explosionForce', 'val-explosionForce', 'physics', 'explosionForce');
+    bindSlider('cfg-hoverDuration', 'val-hoverDuration', 'physics', 'hoverDuration');
+    bindSlider('cfg-gravity', 'val-gravity', 'physics', 'gravity');
+    
+    // 音频参数
+    bindSlider('cfg-volume', 'val-volume', 'audio', 'volume', (val) => {
+        if (window.DeepAudio) {
+            window.DeepAudio.volume = val;
+        }
+    });
+    
+    // 音效开关
+    const soundCheckbox = document.getElementById('cfg-soundEnabled');
+    if (soundCheckbox) {
+        soundCheckbox.checked = FireworkConfig.audio.soundEnabled;
+        soundCheckbox.addEventListener('change', () => {
+            FireworkConfig.set('audio', 'soundEnabled', soundCheckbox.checked);
+            if (window.DeepAudio) {
+                window.DeepAudio.enabled = soundCheckbox.checked;
             }
-        }, config.interval);
-        
-        // 更新UI
-        updateModeDisplay(mode);
-    }
-    
-    function updateModeDisplay(mode) {
-        const display = document.getElementById('current-mode-display');
-        const modeRadios = document.querySelectorAll('input[name="firework-mode"]');
-        
-        if (display) {
-            display.textContent = FireworkConfig.modes[mode].name;
-        }
-        
-        modeRadios.forEach(radio => {
-            radio.checked = radio.value === mode;
+            updateSoundToggleUI();
         });
     }
     
-    // 监听模式变化
+    function bindSlider(sliderId, valueId, category, key, callback) {
+        const slider = document.getElementById(sliderId);
+        const valueDisplay = document.getElementById(valueId);
+        
+        if (!slider || !valueDisplay) return;
+        
+        // 初始值
+        const initialValue = FireworkConfig.get(category, key);
+        if (initialValue !== undefined) {
+            slider.value = initialValue;
+            valueDisplay.textContent = formatValue(initialValue);
+        }
+        
+        // 监听变化
+        slider.addEventListener('input', () => {
+            const val = parseFloat(slider.value);
+            valueDisplay.textContent = formatValue(val);
+            FireworkConfig.set(category, key, val);
+            if (callback) callback(val);
+        });
+    }
+    
+    function formatValue(val) {
+        if (val >= 100) return Math.round(val);
+        if (val >= 1) return val.toFixed(1);
+        if (val >= 0.01) return val.toFixed(3);
+        return val.toFixed(4);
+    }
+    
+    // ==================== 语言切换 ====================
+    
+    const langToggle = document.getElementById('lang-toggle');
+    const langLabel = document.getElementById('lang-label');
+    
+    function updateLanguageUI() {
+        const lang = FireworkConfig.lang;
+        langLabel.textContent = lang === 'zh' ? '中文 / EN' : 'EN / 中文';
+        
+        // 更新所有带 data-i18n 的元素
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            el.textContent = FireworkConfig.t(key);
+        });
+        
+        // 更新模式按钮
+        document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+            const mode = btn.dataset.mode;
+            if (mode === 'relaxed') {
+                btn.querySelector('span').textContent = lang === 'zh' ? '🌙 舒缓' : '🌙 Relaxed';
+            } else if (mode === 'intense') {
+                btn.querySelector('span').textContent = lang === 'zh' ? '🎉 激烈' : '🎉 Intense';
+            }
+        });
+    }
+    
+    langToggle.addEventListener('click', () => {
+        FireworkConfig.toggleLang();
+        updateLanguageUI();
+    });
+    
+    FireworkConfig.updateUI = updateLanguageUI;
+    updateLanguageUI();
+    
+    // ==================== 重置按钮 ====================
+    
+    const resetBtn = document.getElementById('reset-settings');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            FireworkConfig.resetToDefault();
+            
+            // 更新所有滑块
+            document.querySelectorAll('.adv-slider-group input[type="range"]').forEach(slider => {
+                const id = slider.id.replace('cfg-', '');
+                let value;
+                
+                if (['particleCount', 'particleSize', 'fadeSpeed'].includes(id)) {
+                    value = FireworkConfig.particles[id];
+                } else if (['explosionForce', 'hoverDuration', 'gravity'].includes(id)) {
+                    value = FireworkConfig.physics[id];
+                } else if (id === 'volume') {
+                    value = FireworkConfig.audio.volume;
+                }
+                
+                if (value !== undefined) {
+                    slider.value = value;
+                    const valueDisplay = document.getElementById(`val-${id}`);
+                    if (valueDisplay) {
+                        valueDisplay.textContent = value;
+                    }
+                }
+            });
+            
+            // 更新音效复选框
+            const soundCheckbox = document.getElementById('cfg-soundEnabled');
+            if (soundCheckbox) {
+                soundCheckbox.checked = FireworkConfig.audio.soundEnabled;
+            }
+            
+            // 显示确认
+            resetBtn.innerHTML = `<span>✓</span><span>${FireworkConfig.t('resetConfirm')}</span>`;
+            setTimeout(() => {
+                resetBtn.innerHTML = `<span>🔄</span><span data-i18n="resetSettings">${FireworkConfig.t('resetSettings')}</span>`;
+            }, 1500);
+        });
+    }
+    
+    // ==================== 模式切换 ====================
+    
+    const modeDescription = document.getElementById('mode-description');
+    
+    function updateModeUI(mode) {
+        document.querySelectorAll('.mode-toggle-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.mode-toggle-btn[data-mode="${mode}"]`)?.classList.add('active');
+        
+        // 更新描述
+        if (modeDescription) {
+            const descKey = mode === 'relaxed' ? 'relaxedDesc' : 'intenseDesc';
+            modeDescription.textContent = FireworkConfig.t(descKey);
+        }
+    }
+    
+    document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mode = btn.dataset.mode;
+            FireworkConfig.setMode(mode);
+            updateModeUI(mode);
+        });
+    });
+    
+    // 初始化模式UI
+    updateModeUI(FireworkConfig.currentMode);
+    
     FireworkConfig.onModeChange = (mode) => {
-        applyFireworkMode(mode);
+        updateModeUI(mode);
     };
+    
+    // ==================== 定时切换 ====================
+    
+    const scheduleTime = document.getElementById('schedule-time');
+    const scheduleMode = document.getElementById('schedule-mode');
+    const addScheduleBtn = document.getElementById('add-schedule-btn');
+    const scheduleList = document.getElementById('schedule-list');
+    
+    function renderScheduleList() {
+        if (!scheduleList) return;
+        
+        const tasks = FireworkConfig.scheduledTasks;
+        
+        if (tasks.length === 0) {
+            scheduleList.innerHTML = `<div class="schedule-empty">${FireworkConfig.t('noSchedule')}</div>`;
+            return;
+        }
+        
+        scheduleList.innerHTML = tasks.map(task => `
+            <div class="schedule-item">
+                <div class="schedule-item-info">
+                    <span class="schedule-item-time">${task.time}</span>
+                    <span class="schedule-item-mode">→ ${FireworkConfig.t(task.mode)}</span>
+                </div>
+                <button class="schedule-item-delete" data-id="${task.id}">✕</button>
+            </div>
+        `).join('');
+        
+        // 绑定删除事件
+        scheduleList.querySelectorAll('.schedule-item-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                FireworkConfig.removeScheduledTask(parseInt(btn.dataset.id));
+                renderScheduleList();
+            });
+        });
+    }
+    
+    if (addScheduleBtn) {
+        addScheduleBtn.addEventListener('click', () => {
+            const time = scheduleTime.value;
+            const mode = scheduleMode.value;
+            
+            if (time) {
+                FireworkConfig.addScheduledTask(time, mode);
+                renderScheduleList();
+                scheduleTime.value = '';
+            }
+        });
+    }
+    
+    renderScheduleList();
     
     // ==================== 音频控制 ====================
     
@@ -85,7 +281,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function initAudio() {
         if (!audioInitialized && window.DeepAudio) {
             window.DeepAudio.init();
+            window.DeepAudio.volume = FireworkConfig.audio.volume;
+            window.DeepAudio.enabled = FireworkConfig.audio.soundEnabled;
             audioInitialized = true;
+        }
+    }
+    
+    function updateSoundToggleUI() {
+        const enabled = window.DeepAudio ? window.DeepAudio.enabled : false;
+        if (enabled) {
+            soundToggle.classList.remove('muted');
+            soundToggle.title = '关闭音效';
+        } else {
+            soundToggle.classList.add('muted');
+            soundToggle.title = '开启音效';
+        }
+        
+        // 同步复选框
+        if (soundCheckbox) {
+            soundCheckbox.checked = enabled;
         }
     }
     
@@ -94,15 +308,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (window.DeepAudio) {
             const enabled = window.DeepAudio.toggle();
-            
-            if (enabled) {
-                soundToggle.classList.remove('muted');
-                soundToggle.title = '关闭音效';
-            } else {
-                soundToggle.classList.add('muted');
-                soundToggle.title = '开启音效';
-            }
-            
+            FireworkConfig.set('audio', 'soundEnabled', enabled);
+            updateSoundToggleUI();
             return enabled;
         }
         return false;
@@ -113,17 +320,14 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         overlay.classList.add('hidden');
         
-        // 初始化并启用音效
         initAudio();
         if (window.DeepAudio) {
             window.DeepAudio.enabled = true;
-            soundToggle.classList.remove('muted');
+            FireworkConfig.set('audio', 'soundEnabled', true);
         }
+        updateSoundToggleUI();
         
-        // 应用当前模式并开始发射
-        applyFireworkMode(FireworkConfig.currentMode);
-        
-        // 立即发射几个烟花
+        // 发射烟花
         fireworks.launchMultiple(5);
         starfield.boost();
     });
@@ -134,114 +338,15 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleSound();
     });
     
-    // 默认静音状态
+    // 默认状态
     soundToggle.classList.add('muted');
     
-    // 如果用户没点击覆盖层也启动烟花（静音模式）
+    // 3秒后自动开始（静音）
     setTimeout(() => {
         if (!overlay.classList.contains('hidden')) {
-            // 用户还没点击，静默启动
-            applyFireworkMode(FireworkConfig.currentMode);
+            fireworks.autoLaunch = true;
         }
     }, 3000);
-    
-    // ==================== 设置面板 ====================
-    
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsPanel = document.getElementById('settings-panel');
-    const closeSettings = document.getElementById('close-settings');
-    
-    settingsBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        settingsPanel.classList.remove('hidden');
-        settingsPanel.classList.add('visible');
-        updateModeDisplay(FireworkConfig.currentMode);
-        renderScheduleList();
-    });
-    
-    closeSettings.addEventListener('click', () => {
-        settingsPanel.classList.remove('visible');
-        settingsPanel.classList.add('hidden');
-    });
-    
-    // 点击面板外关闭
-    document.addEventListener('click', (e) => {
-        if (settingsPanel.classList.contains('visible') && 
-            !settingsPanel.contains(e.target) &&
-            !settingsBtn.contains(e.target)) {
-            settingsPanel.classList.remove('visible');
-            settingsPanel.classList.add('hidden');
-        }
-    });
-    
-    // 模式切换
-    document.querySelectorAll('input[name="firework-mode"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            FireworkConfig.setMode(e.target.value);
-        });
-    });
-    
-    // ==================== 定时任务 ====================
-    
-    const scheduleTime = document.getElementById('schedule-time');
-    const scheduleMode = document.getElementById('schedule-mode');
-    const addScheduleBtn = document.getElementById('add-schedule');
-    const scheduleList = document.getElementById('schedule-list');
-    
-    function renderScheduleList() {
-        scheduleList.innerHTML = '';
-        
-        FireworkConfig.scheduledTasks.forEach(task => {
-            const item = document.createElement('div');
-            item.className = 'schedule-item';
-            item.innerHTML = `
-                <div class="schedule-item-info">
-                    <span class="schedule-time">${task.time}</span>
-                    <span>${FireworkConfig.modes[task.mode].name}</span>
-                </div>
-                <button class="schedule-delete" data-id="${task.id}">✕</button>
-            `;
-            scheduleList.appendChild(item);
-        });
-        
-        // 绑定删除事件
-        scheduleList.querySelectorAll('.schedule-delete').forEach(btn => {
-            btn.addEventListener('click', () => {
-                FireworkConfig.removeScheduledTask(parseInt(btn.dataset.id));
-                renderScheduleList();
-            });
-        });
-    }
-    
-    addScheduleBtn.addEventListener('click', () => {
-        const time = scheduleTime.value;
-        const mode = scheduleMode.value;
-        
-        if (time) {
-            FireworkConfig.addScheduledTask(time, mode);
-            renderScheduleList();
-            scheduleTime.value = '';
-        }
-    });
-    
-    // 快捷设置
-    document.querySelectorAll('.quick-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const action = btn.dataset.action;
-            
-            if (action === 'countdown-intense') {
-                // 23:59 切换到激烈模式
-                FireworkConfig.addScheduledTask('23:59', 'intense');
-                btn.classList.add('active');
-            } else if (action === 'morning-relaxed') {
-                // 8:00 切换到舒缓模式
-                FireworkConfig.addScheduledTask('08:00', 'relaxed');
-                btn.classList.add('active');
-            }
-            
-            renderScheduleList();
-        });
-    });
     
     // ==================== 愿望输入 ====================
     
@@ -262,25 +367,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ==================== 鼠标交互 ====================
     
-    // 鼠标移动 - 跟踪特效
     document.addEventListener('mousemove', (e) => {
         fireworks.updateMouseTrail(e.clientX, e.clientY);
     });
     
-    // 点击页面 - 在点击位置爆炸烟花
     document.addEventListener('click', (e) => {
-        // 排除各种UI元素的点击
         if (e.target.closest('#audio-overlay') || 
             e.target.closest('.wish-form') ||
             e.target.closest('.control-buttons') ||
-            e.target.closest('.settings-panel') ||
+            e.target.closest('.adv-settings-panel') ||
             e.target.closest('button') ||
             e.target.closest('input') ||
             e.target.closest('select')) {
             return;
         }
         
-        // 在点击位置爆炸烟花
         fireworks.explodeAt(e.clientX, e.clientY);
         starfield.boost();
     });
@@ -288,25 +389,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==================== 键盘快捷键 ====================
     
     document.addEventListener('keydown', (e) => {
-        // ESC 关闭设置面板
         if (e.code === 'Escape') {
-            settingsPanel.classList.remove('visible');
-            settingsPanel.classList.add('hidden');
+            settingsPanel.classList.remove('open');
         }
         
-        // 空格键发射烟花
         if (e.code === 'Space' && document.activeElement !== wishInput) {
             e.preventDefault();
             fireworks.launchMultiple(5);
             starfield.boost();
         }
         
-        // M键切换音效
         if (e.code === 'KeyM' && document.activeElement.tagName !== 'INPUT') {
             toggleSound();
         }
         
-        // 1/2键切换模式
         if (e.code === 'Digit1') {
             FireworkConfig.setMode('relaxed');
         }
@@ -315,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // ==================== 新年庆祝效果 ====================
+    // ==================== 新年庆祝 ====================
     
     function celebrateNewYear() {
         let count = 0;
@@ -329,28 +425,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 150);
         
-        const celebrationMessages = [
-            "🎉 新年快乐！",
-            "🎆 2026来了！",
-            "✨ Happy New Year!",
-            "🎊 恭喜发财！",
-            "🧧 万事如意！"
-        ];
-        
-        celebrationMessages.forEach((msg, i) => {
-            setTimeout(() => {
-                danmaku.addUserWish(msg);
-            }, i * 400);
+        const messages = ["🎉 新年快乐！", "🎆 2026来了！", "✨ Happy New Year!", "🎊 恭喜发财！", "🧧 万事如意！"];
+        messages.forEach((msg, i) => {
+            setTimeout(() => danmaku.addUserWish(msg), i * 400);
         });
     }
     
-    // ==================== 页面可见性处理 ====================
+    // ==================== 页面可见性 ====================
     
     document.addEventListener('visibilitychange', () => {
         fireworks.autoLaunch = !document.hidden;
     });
     
-    // ==================== 控制台欢迎信息 ====================
+    // ==================== 控制台信息 ====================
     
     console.log('%c🎆 新年快乐 2026 🎆', 'color: #FFD700; font-size: 24px; font-weight: bold;');
     console.log('%c愿你的代码永远没有Bug！', 'color: #00FF7F; font-size: 14px;');
