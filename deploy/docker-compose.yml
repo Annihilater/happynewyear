@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  happynewyear:
+    image: klause/happynewyear:latest
+    container_name: happynewyear-web
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - happynewyear-network
+    environment:
+      - TZ=Asia/Shanghai
+    labels:
+      - "com.happynewyear.description=2026新年倒计时网站"
+      - "com.happynewyear.version=1.0"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  happynewyear-network:
+    driver: bridge
