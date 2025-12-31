@@ -31,7 +31,7 @@ chmod +x *.sh
 ./quick-deploy.sh
 ```
 
-服务将在 **http://localhost:8080** 启动
+服务将在 **http://localhost:8021** 启动（端口可在 `app.conf` 中配置）
 
 ### 手动部署
 
@@ -131,11 +131,16 @@ services:
   happynewyear:
     image: happynewyear:latest
     ports:
-      - "8080:80"        # 端口映射
+      - "${APP_PORT:-8021}:${CONTAINER_PORT:-80}"  # 端口映射（从环境变量读取）
     restart: unless-stopped
     environment:
-      - TZ=Asia/Shanghai # 时区设置
+      - TZ=${TZ:-Asia/Shanghai} # 时区设置
 ```
+
+**配置加载顺序**：
+1. 优先使用 `.env` 文件（如果存在）
+2. 否则使用 `app.conf` 文件
+3. 脚本会自动加载配置并导出环境变量供 docker-compose 使用
 
 ### Dockerfile
 ```dockerfile
@@ -151,12 +156,28 @@ EXPOSE 80
 
 ## 🔧 自定义端口
 
-修改 `docker-compose.yml` 中的端口映射：
+### 方式1：使用配置文件（推荐）
+
+```bash
+# 方式A：创建 .env 文件（推荐，不会被git跟踪）
+cd deploy
+cp env.example .env
+vim .env
+# 修改 APP_PORT=8021 为你想要的端口
+
+# 方式B：修改 app.conf 文件
+vim deploy/app.conf
+# 修改 APP_PORT=8021 为你想要的端口
+```
+
+### 方式2：直接修改 docker-compose.yml
 
 ```yaml
 ports:
-  - "8080:80"  # 修改8080为你想要的端口
+  - "8021:80"  # 修改8021为你想要的端口
 ```
+
+**注意**：配置文件中的端口优先级高于 docker-compose.yml 中的默认值。
 
 ## 📊 资源占用
 
@@ -193,8 +214,8 @@ docker push your-registry/happynewyear:latest
 
 ## ❓ 常见问题
 
-### Q: 端口8080被占用？
-A: 修改docker-compose.yml中的端口映射
+### Q: 端口8021被占用？
+A: 修改 `deploy/app.conf` 中的 `APP_PORT` 值，或修改docker-compose.yml中的端口映射
 
 ### Q: 容器无法启动？
 A: 运行`./logs.sh`查看错误日志

@@ -17,6 +17,18 @@ echo -e "${NC}"
 # 进入deploy目录
 cd "$(dirname "$0")"
 
+# 加载配置文件（优先使用.env，否则使用app.conf）
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+elif [ -f "app.conf" ]; then
+    export $(grep -v '^#' app.conf | xargs)
+fi
+
+# 设置默认值
+export APP_PORT=${APP_PORT:-8021}
+export CONTAINER_PORT=${CONTAINER_PORT:-80}
+export TZ=${TZ:-Asia/Shanghai}
+
 # 步骤1: 拉取镜像
 echo -e "${YELLOW}[1/3] 📥 拉取Docker镜像...${NC}"
 ./pull.sh
@@ -37,7 +49,7 @@ echo -e "${GREEN}╔════════════════════
 echo -e "${GREEN}║   🎊 部署完成！新年快乐！🎊         ║${NC}"
 echo -e "${GREEN}╚═══════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${CYAN}🌐 访问地址: ${GREEN}http://localhost:8080${NC}"
+echo -e "${CYAN}🌐 访问地址: ${GREEN}http://localhost:${APP_PORT}${NC}"
 echo -e "${CYAN}📋 查看日志: ${YELLOW}./deploy/logs.sh${NC}"
 echo -e "${CYAN}🛑 停止服务: ${YELLOW}./deploy/stop.sh${NC}"
 echo ""

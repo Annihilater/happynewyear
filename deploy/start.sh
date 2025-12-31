@@ -20,6 +20,18 @@ fi
 # 进入deploy目录
 cd "$(dirname "$0")"
 
+# 加载配置文件（优先使用.env，否则使用app.conf）
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+elif [ -f "app.conf" ]; then
+    export $(grep -v '^#' app.conf | xargs)
+fi
+
+# 设置默认值
+export APP_PORT=${APP_PORT:-8021}
+export CONTAINER_PORT=${CONTAINER_PORT:-80}
+export TZ=${TZ:-Asia/Shanghai}
+
 # 检查是否已经在运行
 if docker-compose ps | grep -q "Up"; then
     echo -e "${YELLOW}⚠️  容器已在运行，将重启...${NC}"
@@ -36,7 +48,7 @@ sleep 3
 # 检查状态
 if docker-compose ps | grep -q "Up"; then
     echo -e "${GREEN}✅ 服务启动成功！${NC}"
-    echo -e "${GREEN}🌐 访问地址: http://localhost:8080${NC}"
+    echo -e "${GREEN}🌐 访问地址: http://localhost:${APP_PORT}${NC}"
     echo -e "${GREEN}🎊 新年快乐！${NC}"
     
     # 显示日志

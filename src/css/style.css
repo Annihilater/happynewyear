@@ -178,7 +178,7 @@ body {
     font-weight: 700;
     letter-spacing: 0.3em;
     margin: 0;
-    /* 和年份一样的渐变效果 */
+    /* 渐变色 */
     background: linear-gradient(90deg, #22d3ee 0%, #a855f7 50%, #f472b6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -295,20 +295,63 @@ body {
         0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* 愿望输入区 */
+/* 愿望输入区 - 悬停展开 */
 .wish-section {
-    width: 100%;
-    max-width: 500px;
+    position: relative;
     animation: fadeInUp 1s ease-out 0.4s backwards;
     pointer-events: auto;
 }
 
-.wish-form {
-    position: relative;
+/* 默认显示的触发图标 */
+.wish-trigger {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
 }
 
-/* 移除模糊伪元素，使用简单的 box-shadow 代替 */
-.wish-form:hover,
+.wish-trigger:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+}
+
+/* 输入表单 - 默认隐藏 */
+.wish-form {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+/* 悬停时展开 */
+.wish-section:hover .wish-trigger,
+.wish-section:focus-within .wish-trigger {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.wish-section:hover .wish-form,
+.wish-section:focus-within .wish-form {
+    width: min(500px, 90vw);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
 .wish-form:focus-within {
     box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
 }
@@ -316,8 +359,7 @@ body {
 .wish-input {
     width: 100%;
     background: rgba(10, 10, 10, 0.95);
-    /* 移除 backdrop-filter 提升性能 */
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 50px;
     padding: 18px 70px 18px 30px;
     font-size: 16px;

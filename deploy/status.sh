@@ -13,6 +13,16 @@ echo ""
 # 进入deploy目录
 cd "$(dirname "$0")"
 
+# 加载配置文件（优先使用.env，否则使用app.conf）
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+elif [ -f "app.conf" ]; then
+    export $(grep -v '^#' app.conf | xargs)
+fi
+
+# 设置默认值
+export APP_PORT=${APP_PORT:-8021}
+
 # 容器状态
 echo -e "${YELLOW}🐳 容器状态:${NC}"
 docker-compose ps
@@ -25,7 +35,13 @@ echo ""
 
 # 端口映射
 echo -e "${YELLOW}🌐 端口映射:${NC}"
-docker-compose port happynewyear 80 2>/dev/null || echo "服务未运行"
+MAPPED_PORT=$(docker-compose port happynewyear 80 2>/dev/null | cut -d: -f2)
+if [ -n "$MAPPED_PORT" ]; then
+    echo -e "  容器端口 80 → 主机端口 ${MAPPED_PORT}"
+    echo -e "  访问地址: http://localhost:${MAPPED_PORT}"
+else
+    echo "  服务未运行"
+fi
 echo ""
 
 # 资源使用
