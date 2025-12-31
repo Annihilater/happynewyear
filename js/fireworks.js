@@ -14,7 +14,7 @@ class Firework3D {
         
         // 基础参数
         this.x = config.x !== undefined ? config.x : (Math.random() - 0.5) * 50;
-        this.z = config.z !== undefined ? config.z : (-20 - Math.random() * 60); // Z轴深度：近到远
+        this.z = config.z !== undefined ? config.z : (-15 - Math.random() * 85); // Z轴深度：-15到-100
         this.targetY = config.targetY !== undefined ? config.targetY : 10 + Math.random() * 15;
         
         // 3D深度
@@ -110,7 +110,8 @@ class Firework3D {
     
     explode() {
         this.phase = 'exploding';
-        this.particleLife = 150;
+        this.particleLife = 400; // 延长生命周期：150 → 400帧（约6.7秒）
+        this.time = 0;
         
         // 移除拖尾
         if (this.trail) {
@@ -149,8 +150,10 @@ class Firework3D {
             const phi = Math.acos(1 - 2 * t) + (Math.random() - 0.5) * 0.2;
             const theta = angleIncrement * i + (Math.random() - 0.5) * 0.3;
             
-            // 随机力度，产生多层效果
-            const force = this.explosionForce * (0.4 + Math.random() * 0.7);
+            // 随机力度，产生多层球壳效果
+            // 远处烟花爆炸力度更大，确保能看到完整圆圈
+            const forceMultiplier = 1 + this.depth * 1.5; // 远处（depth大）力度更大
+            const force = this.explosionForce * forceMultiplier * (0.5 + Math.random() * 0.6);
             
             const vx = force * Math.sin(phi) * Math.cos(theta);
             const vy = force * Math.sin(phi) * Math.sin(theta);
@@ -177,13 +180,13 @@ class Firework3D {
         this.lifetimes = lifetimes;
         
         const material = new THREE.PointsMaterial({
-            size: 0.2,
+            size: 0.15, // 稍微调小基础大小
             vertexColors: true,
             transparent: true,
-            opacity: 0.9,
+            opacity: 0.95,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
-            sizeAttenuation: true
+            sizeAttenuation: true // 启用透视缩放
         });
         
         this.particles = new THREE.Points(geometry, material);
@@ -193,8 +196,16 @@ class Firework3D {
     updateParticles() {
         if (!this.particles) return;
         
+        this.time++;
         const positions = this.particles.geometry.attributes.position.array;
         const sizes = this.particles.geometry.attributes.size.array;
+        
+        // 分阶段物理：
+        // 0-80帧：快速爆炸扩散（高阻力）
+        // 80-400帧：缓慢自由落体（低阻力，重力作用）
+        const explosionPhase = this.time < 80;
+        const friction = explosionPhase ? 0.92 : 0.985; // 爆炸阶段高阻力，落体阶段低阻力
+        const gravityMultiplier = explosionPhase ? 0.3 : 1.5; // 爆炸阶段轻微重力，落体阶段正常重力
         
         for (let i = 0; i < this.particleCount; i++) {
             const i3 = i * 3;
@@ -204,25 +215,34 @@ class Firework3D {
             positions[i3 + 1] += this.velocities[i3 + 1];
             positions[i3 + 2] += this.velocities[i3 + 2];
             
-            // 重力
-            this.velocities[i3 + 1] -= this.gravity;
+            // 重力（Y方向向下）
+            this.velocities[i3 + 1] -= this.gravity * gravityMultiplier;
             
             // 空气阻力
-            this.velocities[i3] *= 0.98;
-            this.velocities[i3 + 1] *= 0.98;
-            this.velocities[i3 + 2] *= 0.98;
+            this.velocities[i3] *= friction;
+            this.velocities[i3 + 1] *= friction;
+            this.velocities[i3 + 2] *= friction;
             
-            // 淡出
-            this.lifetimes[i] -= this.fadeSpeed;
+            // 淡出：前300帧保持，300-400帧淡出
+            if (this.time > 300) {
+                this.lifetimes[i] -= this.fadeSpeed * 3; // 最后100帧快速淡出
+            } else {
+                this.lifetimes[i] -= this.fadeSpeed * 0.3; // 前期缓慢淡出
+            }
             if (this.lifetimes[i] < 0) this.lifetimes[i] = 0;
             
-            // 粒子大小随生命值缩小
-            sizes[i] *= 0.99;
+            // 粒子大小：前期保持，后期缩小
+            if (this.time > 200) {
+                sizes[i] *= 0.995;
+            }
         }
         
         this.particles.geometry.attributes.position.needsUpdate = true;
         this.particles.geometry.attributes.size.needsUpdate = true;
-        this.particles.material.opacity = Math.max(0, this.particleLife / 150);
+        
+        // 整体透明度：保持较高，最后阶段淡出
+        const opacityProgress = Math.min(1, this.particleLife / 400);
+        this.particles.material.opacity = opacityProgress > 0.25 ? 0.9 : opacityProgress * 3.6;
         
         this.particleLife--;
     }
@@ -259,14 +279,14 @@ class FireworkSystem {
         
         // 创建相机 - 调整位置让烟花有远近变化
         this.camera = new THREE.PerspectiveCamera(
-            70,  // 视野角度
+            65,  // 视野角度稍微缩小，让远处烟花更集中
             window.innerWidth / window.innerHeight,
             0.1,
-            200  // 更远的渲染距离
+            300  // 更远的渲染距离
         );
-        // 相机位置：向后退更远，这样远近对比更明显
-        this.camera.position.set(0, 10, 40);
-        this.camera.lookAt(0, 12, -40);
+        // 相机位置：向后退更远，向上看，这样能看到更多烟花
+        this.camera.position.set(0, 5, 35);
+        this.camera.lookAt(0, 12, -50);
         
         // 创建WebGL渲染器
         this.renderer = new THREE.WebGLRenderer({
@@ -298,14 +318,18 @@ class FireworkSystem {
     }
     
     launch(config = {}) {
-        // 随机深度 - 有的很近（充满屏幕），有的很远（能看全）
-        const depth = config.depth !== undefined ? config.depth : Math.random();
+        // 随机深度 - 权重偏向远处烟花（更容易看全）
+        const depth = config.depth !== undefined ? config.depth : Math.pow(Math.random(), 0.6); // 指数分布，偏向大值
         
-        // Z轴范围：-20（很近）到 -80（很远）
-        const zPos = -20 - depth * 60;
+        // Z轴范围：-15（很近）到 -100（很远）
+        // 大部分烟花在 -50 到 -100 之间（远处，能看全）
+        const zPos = -15 - depth * 85;
+        
+        // X轴范围根据深度调整
+        const xRange = 30 + depth * 40;
         
         const firework = new Firework3D(this.scene, {
-            x: config.x !== undefined ? config.x : (Math.random() - 0.5) * 50,
+            x: config.x !== undefined ? config.x : (Math.random() - 0.5) * xRange,
             z: config.z !== undefined ? config.z : zPos,
             targetY: config.targetY !== undefined ? config.targetY : 10 + Math.random() * 15,
             depth: depth,
