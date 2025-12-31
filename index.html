@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新年倒计时 - 迎接2026</title>
+    <meta name="description" content="迎接2026年的到来，享受炫酷的烟花特效和精准的倒计时。新年快乐！">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎆</text></svg>">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 星空背景 Canvas -->
+    <canvas id="starfield"></canvas>
+    
+    <!-- 烟花 Canvas -->
+    <canvas id="fireworks"></canvas>
+    
+    <!-- 音频提示覆盖层 -->
+    <div id="audio-overlay" class="overlay">
+        <div class="overlay-content">
+            <span class="overlay-icon">🎆</span>
+            <span>点击此处唤醒音频并发射烟花</span>
+        </div>
+    </div>
+    
+    <!-- 弹幕容器 -->
+    <div id="danmaku-container"></div>
+    
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 标题区域 -->
+        <div class="title-section">
+            <h2 class="subtitle">A P P R O A C H I N G</h2>
+            <h1 class="year-title">2026</h1>
+            <p class="tagline">点亮希望，照亮未来</p>
+        </div>
+        
+        <!-- 倒计时区域 -->
+        <div class="countdown-container">
+            <div class="countdown-box">
+                <div class="countdown-item">
+                    <div class="flip-card">
+                        <span id="days" class="countdown-number">00</span>
+                    </div>
+                    <span class="countdown-label">DAYS</span>
+                </div>
+                <div class="countdown-item">
+                    <div class="flip-card">
+                        <span id="hours" class="countdown-number">00</span>
+                    </div>
+                    <span class="countdown-label">HOURS</span>
+                </div>
+                <div class="countdown-item">
+                    <div class="flip-card">
+                        <span id="minutes" class="countdown-number">00</span>
+                    </div>
+                    <span class="countdown-label">MINUTES</span>
+                </div>
+                <div class="countdown-item">
+                    <div class="flip-card">
+                        <span id="seconds" class="countdown-number">00</span>
+                    </div>
+                    <span class="countdown-label">SECONDS</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 愿望输入区 -->
+        <div class="wish-section">
+            <form id="wish-form" class="wish-form">
+                <input 
+                    type="text" 
+                    id="wish-input" 
+                    class="wish-input" 
+                    placeholder="输入你的2026新年愿望..."
+                    maxlength="50"
+                    autocomplete="off"
+                >
+                <button type="submit" class="wish-submit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </main>
+    
+    <!-- 音频元素 (使用在线音效) -->
+    <audio id="firework-sound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2971/2971-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- JavaScript 文件 -->
+    <script src="js/starfield.js"></script>
+    <script src="js/fireworks.js"></script>
+    <script src="js/countdown.js"></script>
+    <script src="js/danmaku.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
