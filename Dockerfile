@@ -6,9 +6,7 @@ LABEL maintainer="happynewyear"
 LABEL description="2026新年倒计时网站 - 3D烟花特效"
 
 # 复制网站文件到nginx默认目录
-COPY index.html /usr/share/nginx/html/
-COPY css/ /usr/share/nginx/html/css/
-COPY js/ /usr/share/nginx/html/js/
+COPY src/ /usr/share/nginx/html/
 COPY image/ /usr/share/nginx/html/image/
 COPY docs/ /usr/share/nginx/html/docs/
 

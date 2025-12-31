@@ -127,17 +127,27 @@
 
 ```
 happynewyear/
-├── index.html          # 主页面
-├── css/
-│   └── style.css       # 样式文件
-├── js/
-│   ├── main.js         # 主逻辑
-│   ├── fireworks.js    # 烟花系统
-│   ├── starfield.js    # 星空背景
-│   ├── countdown.js    # 倒计时
-│   ├── danmaku.js      # 弹幕系统
-│   ├── audio.js        # 音效系统
-│   └── config.js       # 配置管理
+├── src/                # 前端源代码
+│   ├── index.html      # 主页面
+│   ├── css/
+│   │   └── style.css   # 样式文件
+│   └── js/
+│       ├── main.js     # 主逻辑
+│       ├── fireworks.js # 烟花系统（Three.js）
+│       ├── starfield.js # 星空背景
+│       ├── countdown.js # 倒计时
+│       ├── danmaku.js  # 弹幕系统
+│       ├── audio.js    # 音效系统
+│       └── config.js   # 配置管理
+├── deploy/             # Docker部署物料
+│   ├── docker-compose.yml
+│   ├── build.sh        # 多平台构建+推送
+│   └── *.sh            # 其他管理脚本
+├── docs/               # 文档
+│   └── source_code/    # CodePen源码备份
+├── image/              # 图片资源
+├── Dockerfile          # Docker镜像
+├── Makefile            # Make命令
 ├── DESIGN.md           # 设计文档
 └── README.md           # 项目说明
 ```

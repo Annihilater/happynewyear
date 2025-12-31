@@ -3,16 +3,19 @@
  * 初始化所有模块并处理交互
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
     // ==================== 初始化配置 ====================
     FireworkConfig.init();
     
     // ==================== 初始化模块 ====================
     
-    // 星空背景
-    const starfield = new Starfield('starfield');
+    // 等待烟花系统加载完成
+    if (!window.FireworkSystem) {
+        console.warn('⏳ 等待Three.js烟花系统加载...');
+        return;
+    }
     
-    // 烟花系统
+    // 烟花系统（包含背景星空）
     const fireworks = new FireworkSystem('fireworks');
     
     // 倒计时
@@ -329,7 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 发射烟花
         fireworks.launchMultiple(5);
-        starfield.boost();
     });
     
     // 音量开关按钮
@@ -360,7 +362,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wish) {
             danmaku.addUserWish(wish);
             fireworks.launchMultiple(3);
-            starfield.boost();
             wishInput.value = '';
         }
     });
@@ -383,7 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         fireworks.explodeAt(e.clientX, e.clientY);
-        starfield.boost();
     });
     
     // ==================== 键盘快捷键 ====================
@@ -397,7 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.code === 'Space' && document.activeElement !== wishInput) {
             e.preventDefault();
             fireworks.launchMultiple(5);
-            starfield.boost();
         }
         
         if (e.code === 'KeyM' && document.activeElement.tagName !== 'INPUT') {
@@ -418,7 +417,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let count = 0;
         const interval = setInterval(() => {
             fireworks.launchMultiple(5);
-            starfield.boost();
             count++;
             
             if (count > 30) {
@@ -443,4 +441,23 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('%c🎆 新年快乐 2026 🎆', 'color: #FFD700; font-size: 24px; font-weight: bold;');
     console.log('%c愿你的代码永远没有Bug！', 'color: #00FF7F; font-size: 14px;');
     console.log('%c快捷键: 空格=烟花 M=音效 ESC=设置 1=舒缓 2=激烈', 'color: #FF69B4; font-size: 12px;');
-});
+}
+
+// ==================== 初始化 ====================
+
+// 等待DOM加载和烟花系统就绪
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkAndInit);
+} else {
+    checkAndInit();
+}
+
+// 等待烟花系统加载
+window.addEventListener('fireworksReady', checkAndInit);
+
+function checkAndInit() {
+    // 确保DOM已加载且烟花系统已就绪
+    if (document.readyState !== 'loading' && window.FireworkSystem) {
+        initApp();
+    }
+}

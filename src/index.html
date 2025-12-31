@@ -12,10 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- 星空背景 Canvas -->
-    <canvas id="starfield"></canvas>
-    
-    <!-- 烟花 Canvas -->
+    <!-- 烟花Canvas（Three.js，包含星空背景）-->
     <canvas id="fireworks"></canvas>
     
     <!-- 音频提示覆盖层 -->
@@ -280,10 +277,23 @@
         <!-- JavaScript 文件 -->
         <script src="js/audio.js"></script>
         <script src="js/config.js"></script>
-        <script src="js/starfield.js"></script>
         <script src="js/countdown.js"></script>
         <script src="js/danmaku.js"></script>
-        <script type="module" src="js/fireworks.js"></script>
-        <script type="module" src="js/main.js"></script>
+        
+        <!-- Three.js烟花系统（异步加载）-->
+        <script>
+            // 动态加载烟花系统，避免阻塞
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = 'js/fireworks.js';
+            script.onload = () => {
+                console.log('✅ 烟花系统加载完成');
+                window.dispatchEvent(new Event('fireworksReady'));
+            };
+            script.onerror = () => console.error('❌ 烟花系统加载失败');
+            document.head.appendChild(script);
+        </script>
+        
+        <script src="js/main.js"></script>
     </body>
 </html>

@@ -28,13 +28,6 @@ echo -e "${YELLOW}📁 构建上下文: $(pwd)${NC}"
 echo -e "${YELLOW}🖥️  目标平台: linux/amd64, linux/arm64${NC}"
 echo ""
 
-# 检查是否已登录DockerHub
-if ! docker info | grep -q "Username"; then
-    echo -e "${RED}❌ 未登录DockerHub！${NC}"
-    echo -e "${YELLOW}💡 请先运行: docker login${NC}"
-    exit 1
-fi
-
 # 创建并使用buildx builder（支持多平台）
 echo -e "${YELLOW}🔧 设置buildx builder...${NC}"
 if ! docker buildx inspect multiarch-builder > /dev/null 2>&1; then

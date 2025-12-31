@@ -93,19 +93,22 @@ make help       # 查看所有命令
 
 ### 方法二：直接打开
 
-直接用浏览器打开 `index.html` 文件即可。
+直接用浏览器打开 `src/index.html` 文件即可。
 
 ### 方法三：本地服务器
 
 ```bash
 # 使用 Python
-python -m http.server 8080
+cd src && python3 -m http.server 8080
+
+# 或使用 Makefile
+make dev
 
 # 或使用 Node.js
-npx serve .
+cd src && npx serve
 
 # 或使用 PHP
-php -S localhost:8080
+cd src && php -S localhost:8080
 ```
 
 然后访问 `http://localhost:8080`
@@ -114,41 +117,47 @@ php -S localhost:8080
 
 ```bash
 happynewyear/
-├── index.html              # 主页面
-├── docker-compose.yml      # Docker编排文件
-├── Dockerfile              # Docker镜像构建文件
-├── .dockerignore           # Docker忽略文件
-├── .cursorrules            # AI代码助手规则
-├── css/
-│   └── style.css           # 样式文件
-├── js/
-│   ├── main.js             # 主控制器（ES6 Module）
-│   ├── fireworks.js        # Three.js烟花系统（ES6 Module）
-│   ├── starfield.js        # Canvas星空背景
-│   ├── audio.js            # Web Audio深度音效
-│   ├── config.js           # 配置管理+LocalStorage
-│   ├── countdown.js        # 倒计时逻辑
-│   └── danmaku.js          # 弹幕系统
+├── src/                    # 📁 前端源代码
+│   ├── index.html          #    主页面
+│   ├── css/                #    样式文件
+│   │   └── style.css
+│   └── js/                 #    JavaScript模块
+│       ├── main.js         #    主控制器（ES6 Module）
+│       ├── fireworks.js    #    Three.js烟花系统
+│       ├── starfield.js    #    Canvas星空背景
+│       ├── audio.js        #    Web Audio深度音效
+│       ├── config.js       #    配置管理+LocalStorage
+│       ├── countdown.js    #    倒计时逻辑
+│       └── danmaku.js      #    弹幕系统
 ├── deploy/                 # 🐳 Docker部署物料
-│   ├── nginx.conf          # Nginx配置
-│   ├── quick-deploy.sh     # 一键部署
-│   ├── start.sh            # 启动服务
-│   ├── stop.sh             # 停止服务
-│   ├── restart.sh          # 重启服务
-│   ├── build.sh            # 构建镜像
-│   ├── pull.sh             # 拉取镜像
-│   ├── logs.sh             # 查看日志
-│   ├── status.sh           # 查看状态
-│   ├── clean.sh            # 清理资源
-│   └── README.md           # 部署文档
-├── docs/
-│   └── source_code/        # 原始参考源码
-│       ├── index.html      # CodePen HTML
-│       ├── main.js         # CodePen JS
-│       └── style.css       # CodePen CSS
-├── image/                  # 截图和参考图片
-├── DESIGN.md               # 设计文档
-└── README.md               # 本文档
+│   ├── docker-compose.yml  #    Docker编排文件
+│   ├── nginx.conf          #    Nginx配置
+│   ├── quick-deploy.sh     #    一键部署
+│   ├── build.sh            #    多平台构建+推送
+│   ├── start.sh            #    启动服务
+│   ├── stop.sh             #    停止服务
+│   ├── restart.sh          #    重启服务
+│   ├── pull.sh             #    拉取镜像
+│   ├── logs.sh             #    查看日志
+│   ├── status.sh           #    查看状态
+│   ├── clean.sh            #    清理资源
+│   ├── README.md           #    部署文档
+│   └── DEPLOY_GUIDE.md     #    完整部署指南
+├── docs/                   # 📚 文档和参考
+│   └── source_code/        #    CodePen原始源码
+│       ├── index.html
+│       ├── main.js
+│       └── style.css
+├── image/                  # 🖼️ 截图和参考图片
+├── .github/                # 🤖 GitHub Actions
+│   └── workflows/
+│       └── docker-publish.yml
+├── Dockerfile              # 🐳 Docker镜像构建
+├── .dockerignore           # Docker忽略文件
+├── Makefile                # 📝 Make命令集
+├── .cursorrules            # 🤖 AI助手规则
+├── DESIGN.md               # 📐 设计文档
+└── README.md               # 📖 项目说明
 ```
 
 ## 🎮 交互方式
@@ -217,7 +226,7 @@ happynewyear/
 
 ### 修改目标日期
 
-编辑 `js/main.js`：
+编辑 `src/js/main.js`：
 
 ```javascript
 const countdown = new Countdown({
@@ -228,7 +237,7 @@ const countdown = new Countdown({
 
 ### 添加祝福语
 
-编辑 `js/danmaku.js` 中的 `wishes` 数组：
+编辑 `src/js/danmaku.js` 中的 `wishes` 数组：
 
 ```javascript
 this.wishes = [
@@ -239,7 +248,7 @@ this.wishes = [
 
 ### 修改颜色主题
 
-编辑 `css/style.css` 中的 CSS 变量：
+编辑 `src/css/style.css` 中的 CSS 变量：
 
 ```css
 :root {

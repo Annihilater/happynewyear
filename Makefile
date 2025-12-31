@@ -66,4 +66,4 @@ clean:
 # 开发模式（本地Python服务器）
 dev:
 	@echo "🚀 启动开发服务器..."
-	@python3 -m http.server 8080
+	@cd src && python3 -m http.server 8080

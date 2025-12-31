@@ -1,6 +1,7 @@
 /**
  * 倒计时组件
  * 计算并显示距离2026年的倒计时
+ * 使用 requestAnimationFrame 驱动，避免与渲染循环冲突
  */
 
 class Countdown {
@@ -24,6 +25,7 @@ class Countdown {
         };
         
         this.isComplete = false;
+        this.lastSecond = -1; // 用于判断是否跨秒
         
         this.start();
     }
@@ -65,10 +67,12 @@ class Countdown {
                     // 更新数值
                     element.textContent = formattedValue;
                     
-                    // 移除动画类
-                    setTimeout(() => {
-                        flipCard.classList.remove('flip-animation');
-                    }, 500);
+                    // 使用 requestAnimationFrame 延迟移除动画类，保持流畅
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            flipCard.classList.remove('flip-animation');
+                        }, 450);
+                    });
                 }
                 
                 this.lastValues[unit] = value;
@@ -78,19 +82,24 @@ class Countdown {
     
     tick() {
         const time = this.calculate();
-        this.updateDOM(time);
         
-        // 回调
-        if (this.onTick) {
-            this.onTick(time);
-        }
-        
-        // 检查是否倒计时完成
-        if (time.days === 0 && time.hours === 0 && time.minutes === 0 && time.seconds === 0) {
-            if (!this.isComplete) {
-                this.isComplete = true;
-                if (this.onComplete) {
-                    this.onComplete();
+        // 只有秒数变化时才更新 DOM（避免无意义的重绘）
+        if (time.seconds !== this.lastSecond) {
+            this.lastSecond = time.seconds;
+            this.updateDOM(time);
+            
+            // 回调
+            if (this.onTick) {
+                this.onTick(time);
+            }
+            
+            // 检查是否倒计时完成
+            if (time.days === 0 && time.hours === 0 && time.minutes === 0 && time.seconds === 0) {
+                if (!this.isComplete) {
+                    this.isComplete = true;
+                    if (this.onComplete) {
+                        this.onComplete();
+                    }
                 }
             }
         }
@@ -100,8 +109,12 @@ class Countdown {
         // 立即执行一次
         this.tick();
         
-        // 每秒更新
-        setInterval(() => this.tick(), 1000);
+        // 使用 requestAnimationFrame 驱动，与渲染同步
+        const loop = () => {
+            this.tick();
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
     }
     
     // 获取剩余时间（用于其他组件）

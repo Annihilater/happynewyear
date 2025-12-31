@@ -51,21 +51,14 @@ body {
 }
 
 /* Canvas 层 */
-#starfield, #fireworks {
+#fireworks {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     pointer-events: none;
-}
-
-#starfield {
     z-index: 1;
-}
-
-#fireworks {
-    z-index: 2;
 }
 
 /* 音频覆盖层 */
@@ -90,8 +83,8 @@ body {
     align-items: center;
     gap: 12px;
     padding: 16px 28px;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.85);
+    /* 移除 backdrop-filter 提升性能 */
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     font-size: 14px;
@@ -137,16 +130,14 @@ body {
     pointer-events: auto;
     cursor: default;
     animation: danmaku linear forwards;
-    will-change: transform;
-    text-shadow: 0 0 10px currentColor;
+    /* 使用 GPU 加速，但不要 will-change 避免内存问题 */
+    transform: translateZ(0);
+    text-shadow: 0 0 8px currentColor;
     opacity: 0.85;
-    transition: opacity 0.2s;
 }
 
 .danmaku:hover {
     opacity: 1;
-    animation-play-state: paused;
-    z-index: 20;
 }
 
 @keyframes danmaku {
@@ -205,16 +196,16 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-shadow: none;
-    /* 增强发光和描边，烟花再多也清晰 */
-    filter: 
-        drop-shadow(0 0 30px var(--glow-purple))
-        drop-shadow(0 0 50px rgba(168, 85, 247, 0.8))
-        drop-shadow(0 0 2px #000)
-        drop-shadow(0 0 2px #000);
+    /* 使用 text-shadow 代替 filter: drop-shadow - 性能更好 */
+    text-shadow: 
+        0 0 30px var(--glow-purple),
+        0 0 60px rgba(168, 85, 247, 0.6);
     line-height: 1;
     letter-spacing: -0.02em;
-    margin: 0; /* 使用flex gap控制间距 */
+    margin: 0;
+    /* 提升到独立渲染层，避免重绘 */
+    will-change: auto;
+    transform: translateZ(0);
 }
 
 .tagline {
@@ -268,28 +259,24 @@ body {
 
 .countdown-number {
     display: block;
-    font-size: clamp(28px, 5vw, 48px); /* 缩小尺寸，更紧凑 */
+    font-size: clamp(28px, 5vw, 48px);
     font-weight: 900;
     font-family: 'Orbitron', monospace;
-    /* 和2026一样的渐变效果 */
     background: linear-gradient(180deg, #ffffff 0%, #e9d5ff 50%, #a855f7 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-shadow: none;
-    /* 强力发光+描边（和2026一样）*/
-    filter: 
-        drop-shadow(0 0 20px var(--glow-purple))
-        drop-shadow(0 0 40px rgba(168, 85, 247, 0.8))
-        drop-shadow(0 0 60px rgba(168, 85, 247, 0.5))
-        drop-shadow(0 0 2px #000)
-        drop-shadow(0 0 2px #000)
-        drop-shadow(0 0 2px #000);
-    letter-spacing: 2px; /* 减小字母间距 */
+    /* 使用简单的 text-shadow 代替多重 filter - 大幅提升性能 */
+    text-shadow: 
+        0 0 20px var(--glow-purple),
+        0 0 40px rgba(168, 85, 247, 0.5);
+    letter-spacing: 2px;
     line-height: 1.1;
-    /* 平滑渲染 */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* 提升到独立渲染层 */
+    will-change: auto;
+    transform: translateZ(0);
 }
 
 .countdown-label {
@@ -319,26 +306,16 @@ body {
     position: relative;
 }
 
-.wish-form::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
-    border-radius: 50px;
-    opacity: 0.2;
-    filter: blur(20px);
-    transition: opacity 0.3s;
-}
-
-.wish-form:hover::before,
-.wish-form:focus-within::before {
-    opacity: 0.4;
+/* 移除模糊伪元素，使用简单的 box-shadow 代替 */
+.wish-form:hover,
+.wish-form:focus-within {
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
 }
 
 .wish-input {
     width: 100%;
-    background: rgba(10, 10, 10, 0.8);
-    backdrop-filter: blur(10px);
+    background: rgba(10, 10, 10, 0.95);
+    /* 移除 backdrop-filter 提升性能 */
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 50px;
     padding: 18px 70px 18px 30px;
@@ -346,7 +323,7 @@ body {
     color: var(--text-primary);
     font-family: inherit;
     outline: none;
-    transition: all 0.3s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .wish-input::placeholder {
@@ -397,21 +374,21 @@ body {
     }
 }
 
-/* 翻转动画 */
+/* 翻转动画 - 使用简单的缩放代替3D旋转，性能更好 */
 @keyframes flipDown {
     0% {
-        transform: rotateX(0);
+        transform: scaleY(1);
     }
     50% {
-        transform: rotateX(-90deg);
+        transform: scaleY(0.8);
     }
     100% {
-        transform: rotateX(0);
+        transform: scaleY(1);
     }
 }
 
 .flip-animation {
-    animation: flipDown 0.5s ease-in-out;
+    animation: flipDown 0.3s ease-out;
 }
 
 /* 响应式设计 */
@@ -479,14 +456,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    background: rgba(30, 30, 30, 0.9);
+    /* 移除 backdrop-filter 提升性能 */
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     color: white;
     cursor: pointer;
-    transition: all 0.3s ease;
-    opacity: 0.7;
+    transition: background 0.2s ease, transform 0.2s ease;
+    opacity: 0.8;
     font-size: 18px;
 }
 
@@ -525,15 +502,15 @@ body {
     width: 280px;
     max-height: calc(100vh - 90px);
     overflow-y: auto;
-    background: rgba(20, 20, 20, 0.95);
-    backdrop-filter: blur(20px);
+    background: rgba(15, 15, 15, 0.98);
+    /* 移除 backdrop-filter 提升性能 */
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
     transform-origin: top right;
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
 }
 
 .adv-settings-panel:not(.open) .adv-settings-content {

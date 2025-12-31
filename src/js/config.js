@@ -261,7 +261,18 @@ const FireworkConfig = {
     init() {
         this.loadFromStorage();
         this.setupTimers();
-        setInterval(() => this.setupTimers(), 60000);
+        // 使用 requestAnimationFrame 每分钟检查一次定时任务
+        // 避免 setInterval 与渲染循环冲突
+        this._lastTimerCheck = 0;
+        const checkTimers = (timestamp) => {
+            // 每60秒检查一次
+            if (timestamp - this._lastTimerCheck > 60000) {
+                this._lastTimerCheck = timestamp;
+                this.setupTimers();
+            }
+            requestAnimationFrame(checkTimers);
+        };
+        requestAnimationFrame(checkTimers);
     }
 };
 
