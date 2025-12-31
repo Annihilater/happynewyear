@@ -211,8 +211,8 @@ body {
 /* 倒计时区域 */
 .countdown-container {
     width: 100%;
-    max-width: 900px;
-    margin-bottom: 50px;
+    max-width: 700px;
+    margin-bottom: 40px;
     animation: fadeInUp 1s ease-out 0.2s backwards;
     pointer-events: auto;
 }
@@ -220,14 +220,14 @@ body {
 .countdown-box {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: clamp(10px, 3vw, 30px);
+    gap: clamp(8px, 2vw, 20px);
     background: var(--bg-card);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: clamp(20px, 4vw, 50px);
+    border-radius: 16px;
+    padding: clamp(15px, 3vw, 30px);
     box-shadow: 
-        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 20px 40px -12px rgba(0, 0, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
@@ -235,8 +235,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 0 10px;
+    gap: 8px;
+    padding: 0 8px;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -246,16 +246,16 @@ body {
 
 .flip-card {
     position: relative;
-    perspective: 400px;
+    perspective: 300px;
 }
 
 .countdown-number {
     display: block;
-    font-size: clamp(36px, 8vw, 80px);
+    font-size: clamp(32px, 7vw, 64px);
     font-weight: 700;
     font-family: 'Orbitron', monospace;
     color: var(--text-primary);
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
     letter-spacing: 2px;
 }
 
