@@ -390,7 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Escape') {
-            settingsPanel.classList.remove('open');
+            // ESC键切换设置面板开关
+            settingsPanel.classList.toggle('open');
         }
         
         if (e.code === 'Space' && document.activeElement !== wishInput) {
@@ -441,5 +442,5 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('%c🎆 新年快乐 2026 🎆', 'color: #FFD700; font-size: 24px; font-weight: bold;');
     console.log('%c愿你的代码永远没有Bug！', 'color: #00FF7F; font-size: 14px;');
-    console.log('%c快捷键: 空格=烟花 M=音效 1=舒缓 2=激烈', 'color: #FF69B4; font-size: 12px;');
+    console.log('%c快捷键: 空格=烟花 M=音效 ESC=设置 1=舒缓 2=激烈', 'color: #FF69B4; font-size: 12px;');
 });

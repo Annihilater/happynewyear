@@ -174,8 +174,12 @@ body {
 /* 标题区域 */
 .title-section {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 50px;
     animation: fadeInUp 1s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px; /* 各元素之间的统一间距 */
 }
 
 .subtitle {
@@ -183,7 +187,7 @@ body {
     font-size: clamp(12px, 2vw, 18px);
     font-weight: 400;
     letter-spacing: 0.5em;
-    margin-bottom: 16px;
+    margin: 0; /* 使用flex gap控制间距 */
     text-transform: uppercase;
     /* 添加描边确保清晰 */
     text-shadow: 
@@ -210,13 +214,14 @@ body {
         drop-shadow(0 0 2px #000);
     line-height: 1;
     letter-spacing: -0.02em;
+    margin: 0; /* 使用flex gap控制间距 */
 }
 
 .tagline {
     color: rgba(255, 255, 255, 0.9);
     font-size: clamp(10px, 1.5vw, 14px);
     letter-spacing: 0.3em;
-    margin-top: 20px;
+    margin: 0; /* 移除margin，使用flex gap控制间距 */
     text-transform: uppercase;
     /* 添加描边确保清晰 */
     text-shadow: 
@@ -229,32 +234,32 @@ body {
 
 /* 倒计时区域 */
 .countdown-container {
-    width: 100%;
-    max-width: 100%;
-    margin-bottom: 50px;
-    animation: fadeInUp 1s ease-out 0.2s backwards;
+    width: auto; /* 改为auto，紧凑显示 */
+    margin: 0; /* 移除外边距，使用title-section的gap */
+    animation: fadeInUp 1s ease-out 0.3s backwards;
     pointer-events: auto;
 }
 
 .countdown-box {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: clamp(15px, 3vw, 40px);
-    background: transparent; /* 移除背景 */
-    backdrop-filter: none; /* 移除模糊 */
-    border: none; /* 移除边框 */
+    display: inline-grid; /* 改为inline-grid，紧凑居中 */
+    grid-template-columns: repeat(4, auto); /* 改为auto，根据内容自适应 */
+    gap: clamp(12px, 2vw, 30px); /* 适中间距 */
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
     border-radius: 0;
     padding: 0;
-    box-shadow: none; /* 移除阴影 */
+    box-shadow: none;
 }
 
 .countdown-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    padding: 0 10px;
-    border-right: none; /* 移除分隔线 */
+    gap: 6px; /* 数字和标签之间的间距 */
+    padding: 0;
+    border-right: none;
+    min-width: 0; /* 允许收缩 */
 }
 
 .flip-card {
@@ -263,7 +268,7 @@ body {
 
 .countdown-number {
     display: block;
-    font-size: clamp(40px, 8vw, 80px);
+    font-size: clamp(28px, 5vw, 48px); /* 缩小尺寸，更紧凑 */
     font-weight: 900;
     font-family: 'Orbitron', monospace;
     /* 和2026一样的渐变效果 */
@@ -274,24 +279,24 @@ body {
     text-shadow: none;
     /* 强力发光+描边（和2026一样）*/
     filter: 
-        drop-shadow(0 0 30px var(--glow-purple))
-        drop-shadow(0 0 50px rgba(168, 85, 247, 0.9))
-        drop-shadow(0 0 80px rgba(168, 85, 247, 0.6))
-        drop-shadow(0 0 3px #000)
-        drop-shadow(0 0 3px #000)
-        drop-shadow(0 0 3px #000);
-    letter-spacing: 4px;
-    line-height: 1.2;
+        drop-shadow(0 0 20px var(--glow-purple))
+        drop-shadow(0 0 40px rgba(168, 85, 247, 0.8))
+        drop-shadow(0 0 60px rgba(168, 85, 247, 0.5))
+        drop-shadow(0 0 2px #000)
+        drop-shadow(0 0 2px #000)
+        drop-shadow(0 0 2px #000);
+    letter-spacing: 2px; /* 减小字母间距 */
+    line-height: 1.1;
     /* 平滑渲染 */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 .countdown-label {
-    font-size: clamp(9px, 1.3vw, 13px);
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 500;
-    letter-spacing: 0.3em;
+    font-size: clamp(8px, 1vw, 11px); /* 更小字体 */
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     /* 和subtitle一样的风格 */
     text-shadow: 
@@ -299,7 +304,7 @@ body {
         1px -1px 0 #000,
         -1px 1px 0 #000,
         1px 1px 0 #000,
-        0 0 15px rgba(255, 255, 255, 0.6);
+        0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 /* 愿望输入区 */
