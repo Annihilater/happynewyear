@@ -469,267 +469,412 @@ body {
     display: block;
 }
 
-/* 设置面板 */
-.settings-panel {
+/* =====================================================
+   高级设置面板 (类似原网站风格)
+   ===================================================== */
+
+.adv-settings-panel {
     position: fixed;
-    top: 0;
-    right: 0;
-    width: 360px;
-    max-width: 90vw;
-    height: 100vh;
-    background: rgba(10, 10, 10, 0.95);
-    backdrop-filter: blur(20px);
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 300;
+    top: 70px;
+    right: 20px;
+    z-index: 250;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.adv-settings-content {
+    width: 280px;
+    max-height: calc(100vh - 90px);
     overflow-y: auto;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transform-origin: top right;
+    transition: all 0.2s ease;
 }
 
-.settings-panel.visible {
-    transform: translateX(0);
+.adv-settings-panel:not(.open) .adv-settings-content {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px) scale(0.95);
+    pointer-events: none;
 }
 
-.settings-panel.hidden {
-    transform: translateX(100%);
+/* 隐藏滚动条但保持滚动功能 */
+.adv-settings-content::-webkit-scrollbar {
+    width: 4px;
 }
 
-.settings-content {
-    padding: 20px;
+.adv-settings-content::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.settings-header {
+.adv-settings-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+/* 折叠分区 */
+.adv-section {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.adv-section:last-child {
+    border-bottom: none;
+}
+
+.adv-section-header {
+    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.settings-header h3 {
-    font-size: 18px;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
     color: white;
-    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-.close-btn {
-    width: 32px;
-    height: 32px;
+.adv-section-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.adv-arrow {
+    font-size: 10px;
+    opacity: 0.6;
+    transition: transform 0.2s;
+}
+
+.adv-section.collapsed .adv-arrow {
+    transform: rotate(-90deg);
+}
+
+.adv-section-body {
+    padding: 0 16px 12px;
+    overflow: hidden;
+    transition: all 0.25s ease;
+}
+
+.adv-section.collapsed .adv-section-body {
+    height: 0;
+    padding: 0 16px;
+    opacity: 0;
+}
+
+/* 参数行 */
+.adv-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.adv-row label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* 滑块组 */
+.adv-slider-group {
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 50%;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.2s;
-}
-
-.close-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.settings-section {
-    margin-bottom: 25px;
-}
-
-.settings-section h4 {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-}
-
-/* 模式选择 */
-.mode-options {
-    display: flex;
-    flex-direction: column;
     gap: 10px;
 }
 
-.mode-option {
+.adv-slider-group input[type="range"] {
+    width: 80px;
+    height: 4px;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
     cursor: pointer;
 }
 
-.mode-option input {
-    display: none;
+.adv-slider-group input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent-cyan);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s;
 }
 
-.mode-card {
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+.adv-slider-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+.adv-value {
+    min-width: 50px;
+    text-align: right;
+    font-size: 12px;
+    color: var(--accent-cyan);
+    font-family: 'SF Mono', Monaco, monospace;
+}
+
+/* 复选框 */
+.adv-checkbox-group {
+    position: relative;
+}
+
+.adv-checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
     transition: all 0.2s;
 }
 
-.mode-option input:checked + .mode-card {
-    border-color: var(--accent-purple);
-    background: rgba(168, 85, 247, 0.1);
+.adv-checkbox-group input[type="checkbox"]:checked {
+    background: var(--accent-cyan);
+    border-color: var(--accent-cyan);
 }
 
-.mode-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.mode-icon {
-    font-size: 24px;
-    margin-bottom: 8px;
-}
-
-.mode-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: white;
-    margin-bottom: 4px;
-}
-
-.mode-desc {
+.adv-checkbox-group input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: black;
     font-size: 12px;
-    color: var(--text-secondary);
+    font-weight: bold;
 }
 
-/* 定时设置 */
-.schedule-form {
+/* 语言切换行 */
+.adv-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+}
+
+.lang-toggle-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lang-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* 模式切换行 */
+.adv-mode-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+}
+
+.adv-mode-row > span {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.mode-toggle-group {
+    display: flex;
+    gap: 6px;
+}
+
+.mode-toggle-btn {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mode-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.mode-toggle-btn.active {
+    background: var(--accent-purple);
+    border-color: var(--accent-purple);
+    color: white;
+}
+
+/* 全宽模式按钮组 */
+.mode-toggle-group.full {
+    width: 100%;
+    display: flex;
+}
+
+.mode-toggle-group.full .mode-toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px;
+}
+
+/* 模式描述 */
+.adv-row.mode-desc {
+    justify-content: center;
+    padding: 4px 0 8px;
+}
+
+.adv-row.mode-desc small {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+/* 定时切换 */
+.schedule-row {
     display: flex;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
-.schedule-input,
-.schedule-select {
-    flex: 1;
-    padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+.schedule-time-input {
+    width: 90px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
     color: white;
-    font-size: 14px;
+    font-size: 12px;
 }
 
-.schedule-input:focus,
-.schedule-select:focus {
-    outline: none;
-    border-color: var(--accent-purple);
+.schedule-mode-select {
+    flex: 1;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
 }
 
-.schedule-select {
-    flex: 2;
+.schedule-mode-select option {
+    background: #1a1a1a;
+    color: white;
 }
 
 .schedule-add-btn {
-    padding: 10px 16px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: var(--accent-purple);
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     color: white;
-    font-size: 14px;
+    font-size: 18px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .schedule-add-btn:hover {
     background: var(--accent-purple-light);
+    transform: scale(1.05);
 }
 
 .schedule-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .schedule-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
+    padding: 8px 12px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    font-size: 13px;
+    border-radius: 6px;
+    font-size: 12px;
 }
 
 .schedule-item-info {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
-.schedule-time {
+.schedule-item-time {
     font-weight: 600;
     color: var(--accent-cyan);
 }
 
-.schedule-delete {
-    width: 24px;
-    height: 24px;
+.schedule-item-mode {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.schedule-item-delete {
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255, 100, 100, 0.2);
     border: none;
-    border-radius: 50%;
+    border-radius: 4px;
     color: #ff6b6b;
-    cursor: pointer;
     font-size: 12px;
+    cursor: pointer;
     transition: all 0.2s;
 }
 
-.schedule-delete:hover {
+.schedule-item-delete:hover {
     background: rgba(255, 100, 100, 0.4);
 }
 
-/* 快捷设置 */
-.quick-settings {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.schedule-empty {
+    text-align: center;
+    padding: 10px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
 }
 
-.quick-btn {
+/* 重置按钮 */
+.reset-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 100, 100, 0.15);
+    border: 1px solid rgba(255, 100, 100, 0.3);
     border-radius: 8px;
-    color: white;
+    color: #ff8888;
     font-size: 13px;
-    text-align: left;
     cursor: pointer;
     transition: all 0.2s;
 }
 
-.quick-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--accent-purple);
+.reset-btn:hover {
+    background: rgba(255, 100, 100, 0.25);
+    border-color: rgba(255, 100, 100, 0.5);
+    color: #ffaaaa;
 }
 
-.quick-btn.active {
-    background: rgba(168, 85, 247, 0.2);
-    border-color: var(--accent-purple);
-}
-
-/* 当前状态 */
-.current-status {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    font-size: 14px;
-}
-
-.mode-badge {
-    padding: 4px 12px;
-    background: var(--accent-purple);
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
+.reset-btn:active {
+    transform: scale(0.98);
 }
 
 /* 选中文本样式 */
