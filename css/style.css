@@ -1,0 +1,435 @@
+/* =====================================================
+   2026 新年倒计时 - 样式文件
+   ===================================================== */
+
+/* CSS 变量定义 */
+:root {
+    --bg-primary: #050505;
+    --bg-secondary: #0a0a0a;
+    --bg-card: rgba(255, 255, 255, 0.05);
+    --text-primary: #ffffff;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    
+    --accent-purple: #a855f7;
+    --accent-purple-light: #c084fc;
+    --accent-cyan: #22d3ee;
+    --accent-blue: #3b82f6;
+    
+    --glow-purple: rgba(168, 85, 247, 0.6);
+    --glow-cyan: rgba(34, 211, 238, 0.3);
+    
+    /* 弹幕颜色 */
+    --danmaku-red: #FF4500;
+    --danmaku-green: #ADFF2F;
+    --danmaku-cyan: #00FFFF;
+    --danmaku-pink: #FF69B4;
+    --danmaku-gold: #FFD700;
+    --danmaku-white: #FFFFFF;
+}
+
+/* 基础重置 */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Orbitron', system-ui, -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Canvas 层 */
+#starfield, #fireworks {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#starfield {
+    z-index: 1;
+}
+
+#fireworks {
+    z-index: 2;
+}
+
+/* 音频覆盖层 */
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 40px;
+    z-index: 100;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0);
+}
+
+.overlay.hidden {
+    display: none;
+}
+
+.overlay-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 28px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.overlay-content:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: var(--accent-purple);
+    transform: scale(1.02);
+}
+
+.overlay-icon {
+    font-size: 24px;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.6); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* 弹幕容器 */
+#danmaku-container {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.danmaku {
+    position: absolute;
+    white-space: nowrap;
+    font-weight: bold;
+    pointer-events: auto;
+    cursor: default;
+    animation: danmaku linear forwards;
+    will-change: transform;
+    text-shadow: 0 0 10px currentColor;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+}
+
+.danmaku:hover {
+    opacity: 1;
+    animation-play-state: paused;
+    z-index: 20;
+}
+
+@keyframes danmaku {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(calc(-100% - 100vw));
+    }
+}
+
+/* 主内容区 */
+.main-content {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    pointer-events: none;
+}
+
+/* 标题区域 */
+.title-section {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeInUp 1s ease-out;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: clamp(12px, 2vw, 18px);
+    font-weight: 300;
+    letter-spacing: 0.5em;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+}
+
+.year-title {
+    font-size: clamp(80px, 20vw, 200px);
+    font-weight: 900;
+    background: linear-gradient(180deg, #ffffff 0%, #e9d5ff 50%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    filter: drop-shadow(0 0 30px var(--glow-purple));
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.tagline {
+    color: var(--text-secondary);
+    font-size: clamp(10px, 1.5vw, 14px);
+    letter-spacing: 0.3em;
+    margin-top: 20px;
+    text-transform: uppercase;
+}
+
+/* 倒计时区域 */
+.countdown-container {
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 50px;
+    animation: fadeInUp 1s ease-out 0.2s backwards;
+    pointer-events: auto;
+}
+
+.countdown-box {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(10px, 3vw, 30px);
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: clamp(20px, 4vw, 50px);
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.countdown-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.countdown-item:last-child {
+    border-right: none;
+}
+
+.flip-card {
+    position: relative;
+    perspective: 400px;
+}
+
+.countdown-number {
+    display: block;
+    font-size: clamp(36px, 8vw, 80px);
+    font-weight: 700;
+    font-family: 'Orbitron', monospace;
+    color: var(--text-primary);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
+}
+
+.countdown-label {
+    font-size: clamp(8px, 1.2vw, 12px);
+    color: var(--text-secondary);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+/* 愿望输入区 */
+.wish-section {
+    width: 100%;
+    max-width: 500px;
+    animation: fadeInUp 1s ease-out 0.4s backwards;
+    pointer-events: auto;
+}
+
+.wish-form {
+    position: relative;
+}
+
+.wish-form::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+    border-radius: 50px;
+    opacity: 0.2;
+    filter: blur(20px);
+    transition: opacity 0.3s;
+}
+
+.wish-form:hover::before,
+.wish-form:focus-within::before {
+    opacity: 0.4;
+}
+
+.wish-input {
+    width: 100%;
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    padding: 18px 70px 18px 30px;
+    font-size: 16px;
+    color: var(--text-primary);
+    font-family: inherit;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.wish-input::placeholder {
+    color: var(--text-muted);
+}
+
+.wish-input:focus {
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.wish-submit {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+}
+
+.wish-submit:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+.wish-submit:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* 动画 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 翻转动画 */
+@keyframes flipDown {
+    0% {
+        transform: rotateX(0);
+    }
+    50% {
+        transform: rotateX(-90deg);
+    }
+    100% {
+        transform: rotateX(0);
+    }
+}
+
+.flip-animation {
+    animation: flipDown 0.5s ease-in-out;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .countdown-box {
+        border-radius: 16px;
+    }
+    
+    .countdown-item {
+        padding: 0 5px;
+    }
+    
+    .overlay-content {
+        font-size: 12px;
+        padding: 12px 20px;
+    }
+    
+    .title-section {
+        margin-bottom: 30px;
+    }
+    
+    .wish-input {
+        padding: 14px 60px 14px 20px;
+        font-size: 14px;
+    }
+    
+    .wish-submit {
+        width: 38px;
+        height: 38px;
+    }
+}
+
+@media (max-width: 480px) {
+    .subtitle {
+        letter-spacing: 0.3em;
+    }
+    
+    .tagline {
+        letter-spacing: 0.15em;
+    }
+    
+    .countdown-box {
+        padding: 15px;
+        gap: 5px;
+    }
+    
+    .countdown-item {
+        border-right: none;
+    }
+}
+
+/* 选中文本样式 */
+::selection {
+    background: var(--accent-purple);
+    color: white;
+}
+
+/* 滚动条 (隐藏) */
+::-webkit-scrollbar {
+    display: none;
+}
