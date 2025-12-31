@@ -14,7 +14,7 @@ class Firework3D {
         
         // 基础参数
         this.x = config.x !== undefined ? config.x : (Math.random() - 0.5) * 50;
-        this.z = config.z !== undefined ? config.z : (Math.random() - 0.5) * 50;
+        this.z = config.z !== undefined ? config.z : (-20 - Math.random() * 60); // Z轴深度：近到远
         this.targetY = config.targetY !== undefined ? config.targetY : 10 + Math.random() * 15;
         
         // 3D深度
@@ -35,10 +35,14 @@ class Firework3D {
         this.hue = Math.random() * 360;
         this.color = new THREE.Color().setHSL(this.hue / 360, 1, 0.6);
         
-        // 参数
+        // 参数 - 根据深度调整
         const baseCount = particles.particleCount || 23000;
         this.particleCount = Math.floor(baseCount * this.scale);
-        this.particleSize = (particles.particleSize || 0.8) * this.scale;
+        
+        // 粒子大小：深度越大（离相机越近）粒子越大
+        const sizeMultiplier = 1 + (1 - this.depth) * 2; // 近处烟花粒子更大
+        this.particleSize = (particles.particleSize || 0.8) * this.scale * sizeMultiplier;
+        
         this.fadeSpeed = particles.fadeSpeed || 0.00482;
         this.explosionForce = (physics.explosionForce || 3.3975) * this.scale;
         this.gravity = (physics.gravity || 0.00265) * this.scale;
@@ -253,15 +257,16 @@ class FireworkSystem {
         // 创建Three.js场景
         this.scene = new THREE.Scene();
         
-        // 创建相机
+        // 创建相机 - 调整位置让烟花有远近变化
         this.camera = new THREE.PerspectiveCamera(
-            60,
+            70,  // 视野角度
             window.innerWidth / window.innerHeight,
             0.1,
-            1000
+            200  // 更远的渲染距离
         );
-        this.camera.position.set(0, 5, 30);
-        this.camera.lookAt(0, 5, 0);
+        // 相机位置：向后退更远，这样远近对比更明显
+        this.camera.position.set(0, 10, 40);
+        this.camera.lookAt(0, 12, -40);
         
         // 创建WebGL渲染器
         this.renderer = new THREE.WebGLRenderer({
@@ -293,11 +298,17 @@ class FireworkSystem {
     }
     
     launch(config = {}) {
+        // 随机深度 - 有的很近（充满屏幕），有的很远（能看全）
+        const depth = config.depth !== undefined ? config.depth : Math.random();
+        
+        // Z轴范围：-20（很近）到 -80（很远）
+        const zPos = -20 - depth * 60;
+        
         const firework = new Firework3D(this.scene, {
-            x: config.x !== undefined ? config.x : (Math.random() - 0.5) * 40,
-            z: config.z !== undefined ? config.z : (Math.random() - 0.5) * 40,
-            targetY: config.targetY !== undefined ? config.targetY : 8 + Math.random() * 12,
-            depth: config.depth !== undefined ? config.depth : Math.random(),
+            x: config.x !== undefined ? config.x : (Math.random() - 0.5) * 50,
+            z: config.z !== undefined ? config.z : zPos,
+            targetY: config.targetY !== undefined ? config.targetY : 10 + Math.random() * 15,
+            depth: depth,
             type: config.type
         });
         this.fireworks.push(firework);
